@@ -1,0 +1,23 @@
+# Service account credentials
+credentials.json
+*.p12
+*.pem
+
+# App config (contains folder IDs and credential paths)
+config.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

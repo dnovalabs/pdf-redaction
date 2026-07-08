@@ -1,6 +1,8 @@
-"""PDF Redactor — text search + interactive area selection + preview before commit."""
+"""PDF Redactor — redaction + Google Drive export."""
 
 import io
+import json
+import logging
 import uuid
 from pathlib import Path
 
@@ -10,10 +12,42 @@ from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="PDF Redactor")
+log = logging.getLogger("pdf-redactor")
 
 sessions: dict[str, dict] = {}
-
 PREVIEW_DPI = 150
+CONFIG_PATH = Path(__file__).parent / "config.json"
+
+
+# ── Config ───────────────────────────────────────────────────────────────
+
+
+def load_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {}
+    with open(CONFIG_PATH) as f:
+        return json.load(f)
+
+
+def get_drive_service():
+    """Build a Google Drive API service from service account credentials."""
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+
+    cfg = load_config().get("storage", {})
+    creds_path = Path(__file__).parent / cfg.get("credentials_path", "credentials.json")
+
+    if not creds_path.exists():
+        raise HTTPException(500, f"Credentials file not found: {creds_path.name}")
+
+    creds = Credentials.from_service_account_file(
+        str(creds_path),
+        scopes=["https://www.googleapis.com/auth/drive.file"],
+    )
+    return build("drive", "v3", credentials=creds)
+
+
+# ── Models ───────────────────────────────────────────────────────────────
 
 
 class Rect(BaseModel):
@@ -29,6 +63,13 @@ class RedactRequest(BaseModel):
     text_query: str = ""
 
 
+class ConfirmRequest(BaseModel):
+    customer_name: str
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────
+
+
 def get_session(sid: str) -> dict:
     s = sessions.get(sid)
     if not s:
@@ -37,11 +78,9 @@ def get_session(sid: str) -> dict:
 
 
 def apply_redactions_to_doc(doc: fitz.Document, rects: list[Rect], text_query: str) -> int:
-    """Apply redactions to a document. Returns count of redacted items."""
     pages_touched: set[int] = set()
     count = 0
 
-    # Area-based redaction
     for r in rects:
         if r.page < 0 or r.page >= len(doc):
             continue
@@ -52,7 +91,6 @@ def apply_redactions_to_doc(doc: fitz.Document, rects: list[Rect], text_query: s
         pages_touched.add(r.page)
         count += 1
 
-    # Text-based redaction
     if text_query:
         for i, pg in enumerate(doc):
             hits = pg.search_for(text_query)
@@ -68,9 +106,48 @@ def apply_redactions_to_doc(doc: fitz.Document, rects: list[Rect], text_query: s
     return count
 
 
+def build_filename(customer_name: str) -> str:
+    cfg = load_config()
+    pattern = cfg.get("file_naming", {}).get("pattern", "{customer_name}.pdf")
+    return pattern.format(customer_name=customer_name)
+
+
+def commit_pending(sid: str) -> bytes:
+    """Commit pending redaction and return the final bytes."""
+    session = get_session(sid)
+    if not session.get("pending_bytes"):
+        raise HTTPException(400, "No pending redaction to confirm.")
+    session["doc_bytes"] = session["pending_bytes"]
+    session["pending_bytes"] = None
+    return session["doc_bytes"]
+
+
+# ── Routes ───────────────────────────────────────────────────────────────
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     return (Path(__file__).parent / "index.html").read_text()
+
+
+@app.get("/config-status")
+def config_status():
+    """Return current storage config (without secrets) so the UI can adapt."""
+    cfg = load_config()
+    storage = cfg.get("storage", {})
+    storage_type = storage.get("type", "none")
+
+    creds_ok = False
+    if storage_type == "google_drive":
+        creds_path = Path(__file__).parent / storage.get("credentials_path", "credentials.json")
+        creds_ok = creds_path.exists()
+
+    return {
+        "storage_type": storage_type,
+        "folder_id": storage.get("folder_id", ""),
+        "credentials_ok": creds_ok,
+        "file_naming_pattern": cfg.get("file_naming", {}).get("pattern", "{customer_name}.pdf"),
+    }
 
 
 @app.post("/upload")
@@ -92,7 +169,6 @@ async def upload(file: UploadFile = File(...)):
 
 @app.get("/preview/{sid}/{page}")
 def preview_page(sid: str, page: int, search: str = "", pending: bool = False):
-    """Render a page. If pending=true, render from the pending redacted version."""
     session = get_session(sid)
     src = session["pending_bytes"] if pending and session.get("pending_bytes") else session["doc_bytes"]
     doc = fitz.open(stream=src, filetype="pdf")
@@ -129,7 +205,6 @@ def search(sid: str, q: str = ""):
 
 @app.post("/prepare-redaction/{sid}")
 def prepare_redaction(sid: str, body: RedactRequest):
-    """Apply redaction to a temporary copy for preview. Does not modify the original."""
     if not body.rects and not body.text_query:
         raise HTTPException(400, "No redaction targets provided.")
 
@@ -150,25 +225,62 @@ def prepare_redaction(sid: str, body: RedactRequest):
     return {"count": count, "page_count": len(fitz.open(stream=session["pending_bytes"], filetype="pdf"))}
 
 
-@app.post("/confirm-redaction/{sid}")
-def confirm_redaction(sid: str):
-    """Commit the pending redaction and return the file for download."""
-    session = get_session(sid)
-    if not session.get("pending_bytes"):
-        raise HTTPException(400, "No pending redaction to confirm.")
+@app.post("/confirm-download/{sid}")
+def confirm_download(sid: str, body: ConfirmRequest):
+    """Commit redaction and return the file for local download."""
+    if not body.customer_name.strip():
+        raise HTTPException(400, "Customer name is required.")
+    pdf_bytes = commit_pending(sid)
+    fname = build_filename(body.customer_name.strip())
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
 
-    session["doc_bytes"] = session["pending_bytes"]
-    session["pending_bytes"] = None
 
-    fname = session["filename"].rsplit(".", 1)[0] + "_redacted.pdf"
-    buf = io.BytesIO(session["doc_bytes"])
-    return StreamingResponse(buf, media_type="application/pdf",
-                             headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+@app.post("/confirm-send/{sid}")
+def confirm_send(sid: str, body: ConfirmRequest):
+    """Commit redaction and upload to Google Drive."""
+    if not body.customer_name.strip():
+        raise HTTPException(400, "Customer name is required.")
+
+    pdf_bytes = commit_pending(sid)
+    fname = build_filename(body.customer_name.strip())
+
+    cfg = load_config().get("storage", {})
+    if cfg.get("type") != "google_drive":
+        raise HTTPException(400, "No external storage configured. Use download instead.")
+
+    from googleapiclient.http import MediaIoBaseUpload
+
+    service = get_drive_service()
+    file_metadata = {"name": fname, "mimeType": "application/pdf"}
+    folder_id = cfg.get("folder_id")
+    if folder_id:
+        file_metadata["parents"] = [folder_id]
+
+    media = MediaIoBaseUpload(io.BytesIO(pdf_bytes), mimetype="application/pdf", resumable=True)
+
+    try:
+        result = service.files().create(
+            body=file_metadata, media_body=media, fields="id,name,webViewLink",
+            supportsAllDrives=True
+        ).execute()
+    except Exception as e:
+        log.exception("Google Drive upload failed")
+        raise HTTPException(502, f"Drive upload failed: {e}")
+
+    return {
+        "status": "uploaded",
+        "file_id": result.get("id"),
+        "file_name": result.get("name"),
+        "web_link": result.get("webViewLink", ""),
+    }
 
 
 @app.post("/cancel-redaction/{sid}")
 def cancel_redaction(sid: str):
-    """Discard the pending redaction."""
     session = get_session(sid)
     session["pending_bytes"] = None
     return {"status": "cancelled"}

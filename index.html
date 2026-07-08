@@ -22,6 +22,12 @@
     padding: 0.2rem 0.5rem; border-radius: 4px;
     background: #b91c1c; color: #fff; font-weight: 600;
   }
+  .drive-badge {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;
+  }
+  .drive-badge.connected { background: #14532d; color: #86efac; }
+  .drive-badge.disconnected { background: #333; color: #888; }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; }
 
@@ -36,10 +42,27 @@
   .upload-zone .icon { font-size: 2rem; }
   .upload-zone input { display: none; }
 
+  /* Customer name row */
+  .customer-row {
+    display: none; margin-top: 1rem; gap: 0.75rem; align-items: center;
+  }
+  .customer-row.visible { display: flex; }
+  .customer-row label {
+    font-size: 0.85rem; color: #ccc; white-space: nowrap; font-weight: 500;
+  }
+  .customer-row input {
+    flex: 1; max-width: 360px; padding: 0.5rem 0.75rem;
+    border: 1px solid #333; border-radius: 8px;
+    background: #1a1a1a; color: #e0e0e0; font-size: 0.85rem; outline: none;
+  }
+  .customer-row input:focus { border-color: #555; }
+  .customer-row input.error { border-color: #b91c1c; }
+  .customer-row .filename-preview { font-size: 0.78rem; color: #666; }
+
   /* Toolbar */
   .toolbar {
     display: flex; gap: 0.5rem; align-items: center;
-    margin-top: 1.25rem; flex-wrap: wrap;
+    margin-top: 0.75rem; flex-wrap: wrap;
   }
 
   .mode-tabs {
@@ -68,8 +91,10 @@
   .btn-search:hover { background: #1d4ed8; }
   .btn-preview { background: #d97706; color: #fff; }
   .btn-preview:hover { background: #b45309; }
-  .btn-confirm { background: #16a34a; color: #fff; }
-  .btn-confirm:hover { background: #15803d; }
+  .btn-send { background: #16a34a; color: #fff; }
+  .btn-send:hover { background: #15803d; }
+  .btn-download { background: #2563eb; color: #fff; }
+  .btn-download:hover { background: #1d4ed8; }
   .btn-cancel { background: #333; color: #ccc; }
   .btn-cancel:hover { background: #444; }
   .btn-clear { background: #333; color: #ccc; }
@@ -124,10 +149,10 @@
     display: none; margin-top: 1rem; padding: 0.75rem 1rem;
     background: #1e3a5f; border-radius: 8px;
     font-size: 0.85rem; color: #93c5fd;
-    align-items: center; gap: 0.75rem;
+    align-items: center; gap: 0.75rem; flex-wrap: wrap;
   }
   .preview-banner.visible { display: flex; }
-  .preview-banner .label { flex: 1; }
+  .preview-banner .label { flex: 1; min-width: 200px; }
 </style>
 </head>
 <body>
@@ -135,6 +160,7 @@
 <header>
   <h1>PDF Redactor</h1>
   <span class="tag">True Redaction</span>
+  <span class="drive-badge disconnected" id="driveBadge" style="display:none">Drive</span>
 </header>
 
 <div class="container">
@@ -149,6 +175,13 @@
     <span>Loaded:</span>
     <span class="name" id="fileName"></span>
     <span id="pageCount"></span>
+  </div>
+
+  <!-- Customer name -->
+  <div class="customer-row" id="customerRow">
+    <label for="customerName">Customer name</label>
+    <input type="text" id="customerName" placeholder="Required — used as the output filename">
+    <span class="filename-preview" id="filenamePreview"></span>
   </div>
 
   <!-- Edit toolbar -->
@@ -170,7 +203,8 @@
   <!-- Preview confirmation banner -->
   <div class="preview-banner" id="previewBanner">
     <span class="label">Previewing redacted result — check each page before confirming.</span>
-    <button class="btn-confirm" id="confirmBtn">Confirm & Download</button>
+    <button class="btn-send" id="sendBtn" style="display:none">Send to Drive</button>
+    <button class="btn-download" id="downloadBtn">Download</button>
     <button class="btn-cancel" id="cancelBtn">Cancel</button>
   </div>
 
@@ -207,9 +241,46 @@ let drawing = false;
 let startX = 0, startY = 0;
 let isPreviewing = false;
 
+// Storage config from server
+let storageConfig = { storage_type: "none", credentials_ok: false, file_naming_pattern: "{customer_name}.pdf" };
+
 const img = $("#previewImg");
 const canvas = $("#overlay");
 const ctx = canvas.getContext("2d");
+
+// ── Config check on load ────────────────────────────────────────────────
+
+(async function checkConfig() {
+  try {
+    const res = await fetch("/config-status");
+    storageConfig = await res.json();
+
+    const badge = $("#driveBadge");
+    if (storageConfig.storage_type === "google_drive") {
+      badge.style.display = "";
+      if (storageConfig.credentials_ok) {
+        badge.className = "drive-badge connected";
+        badge.textContent = "Drive ✓";
+      } else {
+        badge.className = "drive-badge disconnected";
+        badge.textContent = "Drive ✗";
+      }
+    }
+  } catch (_) {}
+})();
+
+// ── Customer name → filename preview ────────────────────────────────────
+
+$("#customerName").addEventListener("input", () => {
+  const name = $("#customerName").value.trim();
+  $("#customerName").classList.toggle("error", false);
+  if (name) {
+    const fname = storageConfig.file_naming_pattern.replace("{customer_name}", name);
+    $("#filenamePreview").textContent = `→ ${fname}`;
+  } else {
+    $("#filenamePreview").textContent = "";
+  }
+});
 
 // ── Upload ──────────────────────────────────────────────────────────────
 
@@ -243,6 +314,7 @@ async function uploadFile(file) {
     $("#fileName").textContent = data.filename;
     $("#pageCount").textContent = `· ${pageCount} page${pageCount > 1 ? "s" : ""}`;
     $("#fileInfo").style.display = "flex";
+    $("#customerRow").classList.add("visible");
     $("#editToolbar").style.display = "flex";
     $("#helpText").style.display = "block";
     $("#pageNav").style.display = "flex";
@@ -280,13 +352,11 @@ $("#nextBtn").addEventListener("click", () => { if (currentPage < pageCount - 1)
 
 function loadPage() {
   let url = `/preview/${sessionId}/${currentPage}?dpi=150&t=${Date.now()}`;
-
   if (isPreviewing) {
     url += "&pending=true";
   } else if (mode === "text" && currentQuery) {
     url += `&search=${encodeURIComponent(currentQuery)}`;
   }
-
   img.src = url;
   $("#pageLabel").textContent = `Page ${currentPage + 1} / ${pageCount}`;
   $("#prevBtn").disabled = currentPage === 0;
@@ -359,7 +429,7 @@ canvas.addEventListener("mouseleave", () => { if (drawing) { drawing = false; dr
 
 function drawOverlay() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (isPreviewing) return; // No overlay during preview
+  if (isPreviewing) return;
 
   const rects = drawnRects[currentPage] || [];
   for (const r of rects) {
@@ -373,7 +443,6 @@ function drawOverlay() {
     ctx.strokeRect(px, py, pw, ph);
     ctx.setLineDash([]);
 
-    // × button
     const bx = px + pw - 18, by = py + 4, bs = 14;
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(bx, by, bs, bs);
@@ -387,7 +456,6 @@ function drawOverlay() {
   }
 }
 
-// Click to remove via ×
 canvas.addEventListener("click", e => {
   if (mode !== "draw" || drawing || isPreviewing) return;
   const p = canvasCoords(e);
@@ -429,10 +497,11 @@ async function doSearch() {
   } catch (err) { showStatus(err.message, "error"); }
 }
 
-// ── Preview / Confirm / Cancel ──────────────────────────────────────────
+// ── Preview / Send / Download / Cancel ──────────────────────────────────
 
 $("#previewBtn").addEventListener("click", preparePreview);
-$("#confirmBtn").addEventListener("click", confirmRedaction);
+$("#sendBtn").addEventListener("click", () => confirmAction("send"));
+$("#downloadBtn").addEventListener("click", () => confirmAction("download"));
 $("#cancelBtn").addEventListener("click", cancelPreview);
 $("#clearBtn").addEventListener("click", () => {
   drawnRects = {};
@@ -443,13 +512,26 @@ $("#clearBtn").addEventListener("click", () => {
   loadPage();
 });
 
+function getCustomerName() {
+  const name = $("#customerName").value.trim();
+  if (!name) {
+    $("#customerName").classList.add("error");
+    $("#customerName").focus();
+    showStatus("Customer name is required.", "error");
+    return null;
+  }
+  return name;
+}
+
 async function preparePreview() {
+  const customerName = getCustomerName();
+  if (!customerName) return;
+
   const allRects = [];
   for (const [page, rects] of Object.entries(drawnRects)) {
     for (const r of rects) allRects.push({ page: parseInt(page), ...r });
   }
   const textQ = (mode === "text") ? currentQuery : "";
-
   if (allRects.length === 0 && !textQ) return;
 
   try {
@@ -462,43 +544,62 @@ async function preparePreview() {
     const data = await res.json();
 
     isPreviewing = true;
-    showStatus(`Preview: ${data.count} area${data.count > 1 ? "s" : ""} redacted. Browse pages to verify, then confirm or cancel.`, "info");
+    showStatus(`Preview: ${data.count} area${data.count > 1 ? "s" : ""} redacted. Browse pages to verify, then send or download.`, "info");
 
-    // Switch UI to preview mode
     $("#editToolbar").style.display = "none";
     $("#helpText").style.display = "none";
     $("#previewBanner").classList.add("visible");
     canvas.style.pointerEvents = "none";
+
+    // Show/hide Send to Drive based on config
+    const driveAvailable = storageConfig.storage_type === "google_drive" && storageConfig.credentials_ok;
+    $("#sendBtn").style.display = driveAvailable ? "" : "none";
 
     currentPage = 0;
     loadPage();
   } catch (err) { showStatus(err.message, "error"); }
 }
 
-async function confirmRedaction() {
+async function confirmAction(action) {
+  const customerName = getCustomerName();
+  if (!customerName) return;
+
+  const endpoint = action === "send" ? "confirm-send" : "confirm-download";
+
   try {
-    const res = await fetch(`/confirm-redaction/${sessionId}`, { method: "POST" });
-    if (!res.ok) throw new Error((await res.json()).detail);
+    const res = await fetch(`/${endpoint}/${sessionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_name: customerName }),
+    });
 
-    // Download
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "redacted.pdf";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || res.statusText);
+    }
 
-    exitPreviewMode();
-    showStatus("Redaction confirmed and file downloaded. You can continue editing or upload a new file.", "success");
+    if (action === "send") {
+      const data = await res.json();
+      exitPreviewMode();
+      const link = data.web_link ? ` <a href="${data.web_link}" target="_blank" style="color:#86efac">${data.file_name}</a>` : ` as ${data.file_name}`;
+      showStatusHTML(`Uploaded to Google Drive${link}`, "success");
+    } else {
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "redacted.pdf";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      exitPreviewMode();
+      showStatus("File downloaded.", "success");
+    }
   } catch (err) { showStatus(err.message, "error"); }
 }
 
 async function cancelPreview() {
-  try {
-    await fetch(`/cancel-redaction/${sessionId}`, { method: "POST" });
-  } catch (_) {}
+  try { await fetch(`/cancel-redaction/${sessionId}`, { method: "POST" }); } catch (_) {}
   exitPreviewMode();
-  showStatus("Preview cancelled. Your selections are still in place — adjust and try again.", "info");
+  showStatus("Preview cancelled. Your selections are still in place.", "info");
 }
 
 function exitPreviewMode() {
@@ -521,6 +622,8 @@ function resetControls() {
   setMode("draw");
   $("#matchInfo").textContent = "";
   $("#searchInput").value = "";
+  $("#customerName").value = "";
+  $("#filenamePreview").textContent = "";
 }
 
 function updateButtons() {
@@ -537,6 +640,9 @@ function updateButtons() {
 
 function showStatus(msg, type) {
   const el = $("#status"); el.textContent = msg; el.className = `status ${type}`;
+}
+function showStatusHTML(html, type) {
+  const el = $("#status"); el.innerHTML = html; el.className = `status ${type}`;
 }
 function hideStatus() { $("#status").className = "status"; }
 </script>
