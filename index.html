@@ -134,8 +134,9 @@
     background: var(--surface-1); color: var(--text-2);
     font-size: 0.75rem; font-weight: 500; cursor: pointer;
     font-family: var(--font-ui);
-    transition: background 0.12s, color 0.12s;
+    transition: background 0.12s, color 0.12s, transform 0.1s ease-out;
   }
+  .mode-tabs button:not(.active):hover { background: var(--surface-3); color: var(--text-1); }
   .mode-tabs button.active { background: var(--accent); color: #fff; }
   .mode-tabs button + button { border-left: 1px solid var(--border); }
 
@@ -156,31 +157,32 @@
     padding: 0.45rem 1rem; border: none; border-radius: var(--r-md);
     font-size: 0.75rem; font-weight: 500; cursor: pointer;
     font-family: var(--font-ui);
-    transition: background 0.12s, box-shadow 0.12s;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.1s ease-out, color 0.12s;
   }
+  button:active:not(:disabled) { transform: scale(0.97); }
   .btn-search {
     background: var(--accent); color: #fff;
     box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
   }
-  .btn-search:hover { background: var(--accent-hover); }
+  .btn-search:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
 
   .btn-preview {
     background: var(--accent); color: #fff;
     box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
   }
-  .btn-preview:hover { background: var(--accent-hover); }
+  .btn-preview:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
 
   .btn-send {
     background: var(--accent); color: #fff;
     box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
   }
-  .btn-send:hover { background: var(--accent-hover); }
+  .btn-send:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
 
   .btn-download {
     background: var(--surface-1); color: var(--text-1);
     border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm);
   }
-  .btn-download:hover { background: var(--surface-2); }
+  .btn-download:hover { background: var(--surface-2); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
 
   .btn-cancel {
     background: transparent; color: var(--text-2); border: 1px solid var(--border);
@@ -257,9 +259,18 @@
     background: var(--info-bg); border: 1px solid var(--info-border);
     border-radius: var(--r-md); font-size: 0.8rem; color: var(--info);
     align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    position: relative; overflow: hidden;
   }
   .preview-banner.visible { display: flex; }
   .preview-banner .label { flex: 1; min-width: 200px; }
+
+  /* Send progress bar */
+  .send-progress {
+    position: absolute; bottom: 0; left: 0; height: 3px; width: 0%;
+    background: var(--accent); border-radius: 0 0 var(--r-md) var(--r-md);
+    opacity: 0; pointer-events: none;
+  }
+  .send-progress.active { opacity: 1; }
 
   /* Login overlay */
   .login-overlay {
@@ -292,9 +303,10 @@
     border: none; border-radius: var(--r-md); font-family: var(--font-ui);
     font-size: 0.85rem; font-weight: 500; cursor: pointer; margin-top: 0.25rem;
     box-shadow: 0 1px 2px rgba(13, 148, 136, .25);
-    transition: background 0.12s;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.1s ease-out;
   }
-  .btn-signin:hover { background: var(--accent-hover); }
+  .btn-signin:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
+  .btn-signin:active:not(:disabled) { transform: scale(0.98); }
   .btn-signin:disabled { opacity: 0.4; cursor: not-allowed; }
   .login-error {
     margin-bottom: 0.75rem; padding: 0.45rem 0.75rem; border-radius: var(--r-sm);
@@ -334,6 +346,7 @@
     flex-shrink: 0; margin-top: 1px;
   }
   .toast-close:hover { opacity: 1; }
+  .toast-close:active { transform: none; }
 </style>
 </head>
 <body>
@@ -410,6 +423,7 @@
     <button class="btn-send" id="sendBtn" style="display:none">Send to Drive</button>
     <button class="btn-download" id="downloadBtn">Download</button>
     <button class="btn-cancel" id="cancelBtn">Cancel</button>
+    <div class="send-progress" id="sendProgress"></div>
   </div>
 
   <p class="help-text" id="helpText" style="display:none">
@@ -851,6 +865,18 @@ async function confirmAction(action) {
 
   const endpoint = action === "send" ? "confirm-send" : "confirm-download";
 
+  const sendBtn = $("#sendBtn");
+  const downloadBtn = $("#downloadBtn");
+  const cancelBtn = $("#cancelBtn");
+
+  if (action === "send") {
+    startSendProgress();
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending…";
+    downloadBtn.disabled = true;
+    cancelBtn.disabled = true;
+  }
+
   try {
     const res = await fetch(`/${endpoint}/${sessionId}`, {
       method: "POST",
@@ -865,6 +891,7 @@ async function confirmAction(action) {
 
     if (action === "send") {
       const data = await res.json();
+      completeSendProgress();
       resetToInitial();
       const link = data.web_link
         ? `Sent to Google Drive: <a href="${data.web_link}" target="_blank">${data.file_name}</a>`
@@ -880,7 +907,16 @@ async function confirmAction(action) {
       resetToInitial();
       showToast("File downloaded successfully.");
     }
-  } catch (err) { showStatus(err.message, "error"); }
+  } catch (err) {
+    if (action === "send") {
+      resetSendProgress();
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send to Drive";
+      downloadBtn.disabled = false;
+      cancelBtn.disabled = false;
+    }
+    showStatus(err.message, "error");
+  }
 }
 
 async function cancelPreview() {
@@ -933,6 +969,57 @@ function showStatusHTML(html, type) {
 }
 function hideStatus() { $("#status").className = "status"; }
 
+// ── Send progress bar ────────────────────────────────────────────────────
+
+let sendProgressTimer = null;
+
+function startSendProgress() {
+  clearTimeout(sendProgressTimer);
+  const bar = $("#sendProgress");
+  bar.style.transition = "none";
+  bar.style.width = "0%";
+  bar.classList.add("active");
+
+  // Staged simulation: fast early, slow near the end while waiting on server
+  const steps = [
+    { target: 28, ms: 350 },
+    { target: 50, ms: 500 },
+    { target: 66, ms: 700 },
+    { target: 78, ms: 1000 },
+    { target: 88, ms: 1600 },
+    { target: 93, ms: 2500 },
+  ];
+  let i = 0;
+  function advance() {
+    if (i >= steps.length) return;
+    const s = steps[i++];
+    bar.style.transition = `width ${s.ms}ms ease-out`;
+    bar.style.width = s.target + "%";
+    sendProgressTimer = setTimeout(advance, s.ms);
+  }
+  requestAnimationFrame(advance);
+}
+
+function completeSendProgress() {
+  clearTimeout(sendProgressTimer);
+  const bar = $("#sendProgress");
+  bar.style.transition = "width 0.2s ease-out";
+  bar.style.width = "100%";
+  setTimeout(() => {
+    bar.style.transition = "opacity 0.3s ease-in";
+    bar.style.opacity = "0";
+    setTimeout(() => { bar.classList.remove("active"); bar.style.cssText = ""; }, 320);
+  }, 220);
+}
+
+function resetSendProgress() {
+  clearTimeout(sendProgressTimer);
+  const bar = $("#sendProgress");
+  bar.style.transition = "opacity 0.2s ease-in";
+  bar.style.opacity = "0";
+  setTimeout(() => { bar.classList.remove("active"); bar.style.cssText = ""; }, 220);
+}
+
 // ── Toast ────────────────────────────────────────────────────────────────
 
 let toastTimer = null;
@@ -959,6 +1046,13 @@ function resetToInitial() {
   isPreviewing = false;
   drawnRects = {};
   currentQuery = "";
+
+  resetSendProgress();
+  const sendBtn = $("#sendBtn");
+  sendBtn.disabled = false;
+  sendBtn.textContent = "Send to Drive";
+  $("#downloadBtn").disabled = false;
+  $("#cancelBtn").disabled = false;
 
   $("#fileInfo").style.display = "none";
   $("#customerRow").classList.remove("visible");
