@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Redactor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #111; color: #e0e0e0; min-height: 100vh;
+  }
+
+  header {
+    padding: 1rem 2rem; border-bottom: 1px solid #222;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 600; color: #fff; }
+  header .tag {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem; border-radius: 4px;
+    background: #b91c1c; color: #fff; font-weight: 600;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; }
+
+  /* Upload */
+  .upload-zone {
+    border: 2px dashed #333; border-radius: 12px;
+    padding: 3rem 2rem; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: #555; background: #1a1a1a; }
+  .upload-zone p { color: #888; margin-top: 0.5rem; font-size: 0.9rem; }
+  .upload-zone .icon { font-size: 2rem; }
+  .upload-zone input { display: none; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex; gap: 0.5rem; align-items: center;
+    margin-top: 1.25rem; flex-wrap: wrap;
+  }
+
+  .mode-tabs {
+    display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #333;
+  }
+  .mode-tabs button {
+    padding: 0.5rem 1rem; border: none; border-radius: 0;
+    background: #1a1a1a; color: #999; font-size: 0.8rem; cursor: pointer;
+  }
+  .mode-tabs button.active { background: #2563eb; color: #fff; }
+  .mode-tabs button + button { border-left: 1px solid #333; }
+
+  .search-group { display: flex; gap: 0.5rem; flex: 1; min-width: 200px; }
+  .search-group input {
+    flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #333;
+    border-radius: 8px; background: #1a1a1a; color: #e0e0e0;
+    font-size: 0.85rem; outline: none;
+  }
+  .search-group input:focus { border-color: #555; }
+
+  button {
+    padding: 0.5rem 1rem; border: none; border-radius: 8px;
+    font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  }
+  .btn-search { background: #2563eb; color: #fff; }
+  .btn-search:hover { background: #1d4ed8; }
+  .btn-preview { background: #d97706; color: #fff; }
+  .btn-preview:hover { background: #b45309; }
+  .btn-confirm { background: #16a34a; color: #fff; }
+  .btn-confirm:hover { background: #15803d; }
+  .btn-cancel { background: #333; color: #ccc; }
+  .btn-cancel:hover { background: #444; }
+  .btn-clear { background: #333; color: #ccc; }
+  .btn-clear:hover { background: #444; }
+  button:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
+
+  .spacer { flex: 1; }
+  .info { font-size: 0.8rem; color: #888; }
+
+  /* Page nav */
+  .page-nav {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1rem; margin-top: 0.75rem;
+  }
+  .page-nav button { background: #222; color: #ccc; padding: 0.35rem 0.7rem; border-radius: 6px; }
+  .page-nav button:hover { background: #333; }
+  .page-nav span { font-size: 0.8rem; color: #999; }
+
+  /* Preview with canvas */
+  .preview-wrap {
+    position: relative; display: inline-block; margin-top: 0.75rem; max-width: 100%;
+  }
+  .preview-wrap img {
+    display: block; max-width: 100%; border-radius: 6px; border: 1px solid #222;
+    user-select: none; -webkit-user-drag: none;
+  }
+  .preview-wrap canvas {
+    position: absolute; top: 0; left: 0; border-radius: 6px; cursor: crosshair;
+  }
+  .preview-center { text-align: center; margin-top: 0.75rem; }
+
+  .status {
+    margin-top: 0.75rem; padding: 0.6rem 1rem; border-radius: 8px;
+    font-size: 0.8rem; display: none;
+  }
+  .status.success { display: block; background: #14532d; color: #86efac; }
+  .status.error   { display: block; background: #7f1d1d; color: #fca5a5; }
+  .status.info    { display: block; background: #1e3a5f; color: #93c5fd; }
+
+  .file-info {
+    margin-top: 0.75rem; font-size: 0.8rem; color: #888;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .file-info .name { color: #ccc; font-weight: 500; }
+
+  .help-text {
+    margin-top: 0.5rem; font-size: 0.78rem; color: #666; font-style: italic;
+  }
+
+  /* Preview banner */
+  .preview-banner {
+    display: none; margin-top: 1rem; padding: 0.75rem 1rem;
+    background: #1e3a5f; border-radius: 8px;
+    font-size: 0.85rem; color: #93c5fd;
+    align-items: center; gap: 0.75rem;
+  }
+  .preview-banner.visible { display: flex; }
+  .preview-banner .label { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PDF Redactor</h1>
+  <span class="tag">True Redaction</span>
+</header>
+
+<div class="container">
+
+  <div class="upload-zone" id="dropZone">
+    <div class="icon">📄</div>
+    <p>Drop a PDF here or click to upload</p>
+    <input type="file" id="fileInput" accept=".pdf">
+  </div>
+
+  <div class="file-info" id="fileInfo" style="display:none">
+    <span>Loaded:</span>
+    <span class="name" id="fileName"></span>
+    <span id="pageCount"></span>
+  </div>
+
+  <!-- Edit toolbar -->
+  <div class="toolbar" id="editToolbar" style="display:none">
+    <div class="mode-tabs">
+      <button class="active" data-mode="draw" id="modeDrawBtn">Draw</button>
+      <button data-mode="text" id="modeTextBtn">Text Search</button>
+    </div>
+    <div class="search-group" id="searchGroup" style="display:none">
+      <input type="text" id="searchInput" placeholder="Search text…">
+      <button class="btn-search" id="searchBtn">Find</button>
+    </div>
+    <span class="info" id="matchInfo"></span>
+    <span class="spacer"></span>
+    <button class="btn-clear" id="clearBtn" disabled>Clear</button>
+    <button class="btn-preview" id="previewBtn" disabled>Preview Redaction</button>
+  </div>
+
+  <!-- Preview confirmation banner -->
+  <div class="preview-banner" id="previewBanner">
+    <span class="label">Previewing redacted result — check each page before confirming.</span>
+    <button class="btn-confirm" id="confirmBtn">Confirm & Download</button>
+    <button class="btn-cancel" id="cancelBtn">Cancel</button>
+  </div>
+
+  <p class="help-text" id="helpText" style="display:none">
+    Click and drag on the page to mark areas for redaction.
+  </p>
+
+  <div class="page-nav" id="pageNav" style="display:none">
+    <button id="prevBtn">← Prev</button>
+    <span id="pageLabel">Page 1 / 1</span>
+    <button id="nextBtn">Next →</button>
+  </div>
+
+  <div class="preview-center" id="previewCenter">
+    <div class="preview-wrap" id="previewWrap" style="display:none">
+      <img id="previewImg" alt="Page preview">
+      <canvas id="overlay"></canvas>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+let sessionId = null;
+let pageCount = 0;
+let currentPage = 0;
+let mode = "draw";
+let currentQuery = "";
+let drawnRects = {};
+let drawing = false;
+let startX = 0, startY = 0;
+let isPreviewing = false;
+
+const img = $("#previewImg");
+const canvas = $("#overlay");
+const ctx = canvas.getContext("2d");
+
+// ── Upload ──────────────────────────────────────────────────────────────
+
+const dropZone = $("#dropZone");
+const fileInput = $("#fileInput");
+
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault(); dropZone.classList.remove("dragover");
+  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files.length) uploadFile(fileInput.files[0]); });
+
+async function uploadFile(file) {
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const res = await fetch("/upload", { method: "POST", body: form });
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const data = await res.json();
+
+    sessionId = data.session_id;
+    pageCount = data.page_count;
+    currentPage = 0;
+    currentQuery = "";
+    drawnRects = {};
+    isPreviewing = false;
+
+    $("#fileName").textContent = data.filename;
+    $("#pageCount").textContent = `· ${pageCount} page${pageCount > 1 ? "s" : ""}`;
+    $("#fileInfo").style.display = "flex";
+    $("#editToolbar").style.display = "flex";
+    $("#helpText").style.display = "block";
+    $("#pageNav").style.display = "flex";
+    $("#previewWrap").style.display = "inline-block";
+    $("#previewBanner").classList.remove("visible");
+
+    resetControls();
+    hideStatus();
+    loadPage();
+  } catch (err) { showStatus(err.message, "error"); }
+}
+
+// ── Mode switching ──────────────────────────────────────────────────────
+
+$("#modeDrawBtn").addEventListener("click", () => setMode("draw"));
+$("#modeTextBtn").addEventListener("click", () => setMode("text"));
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode-tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.mode === m));
+  $("#searchGroup").style.display = m === "text" ? "flex" : "none";
+  $("#helpText").textContent = m === "draw"
+    ? "Click and drag on the page to mark areas for redaction."
+    : "Search for text to highlight matches, then preview redaction.";
+  canvas.style.pointerEvents = m === "draw" ? "auto" : "none";
+  if (m === "text") { currentQuery = ""; loadPage(); }
+  updateButtons();
+}
+
+// ── Page navigation ─────────────────────────────────────────────────────
+
+$("#prevBtn").addEventListener("click", () => { if (currentPage > 0) { currentPage--; loadPage(); } });
+$("#nextBtn").addEventListener("click", () => { if (currentPage < pageCount - 1) { currentPage++; loadPage(); } });
+
+function loadPage() {
+  let url = `/preview/${sessionId}/${currentPage}?dpi=150&t=${Date.now()}`;
+
+  if (isPreviewing) {
+    url += "&pending=true";
+  } else if (mode === "text" && currentQuery) {
+    url += `&search=${encodeURIComponent(currentQuery)}`;
+  }
+
+  img.src = url;
+  $("#pageLabel").textContent = `Page ${currentPage + 1} / ${pageCount}`;
+  $("#prevBtn").disabled = currentPage === 0;
+  $("#nextBtn").disabled = currentPage >= pageCount - 1;
+}
+
+img.addEventListener("load", () => {
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  canvas.style.width = img.clientWidth + "px";
+  canvas.style.height = img.clientHeight + "px";
+  drawOverlay();
+});
+
+window.addEventListener("resize", () => {
+  canvas.style.width = img.clientWidth + "px";
+  canvas.style.height = img.clientHeight + "px";
+});
+
+// ── Drawing ─────────────────────────────────────────────────────────────
+
+function canvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height),
+  };
+}
+
+canvas.addEventListener("mousedown", e => {
+  if (mode !== "draw" || isPreviewing) return;
+  drawing = true;
+  const p = canvasCoords(e);
+  startX = p.x; startY = p.y;
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!drawing) return;
+  const p = canvasCoords(e);
+  drawOverlay();
+  const rx = Math.min(startX, p.x), ry = Math.min(startY, p.y);
+  const rw = Math.abs(p.x - startX), rh = Math.abs(p.y - startY);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+  ctx.strokeStyle = "#888";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 3]);
+  ctx.fillRect(rx, ry, rw, rh);
+  ctx.strokeRect(rx, ry, rw, rh);
+  ctx.setLineDash([]);
+});
+
+canvas.addEventListener("mouseup", e => {
+  if (!drawing) return;
+  drawing = false;
+  const p = canvasCoords(e);
+  const rx = Math.min(startX, p.x), ry = Math.min(startY, p.y);
+  const rw = Math.abs(p.x - startX), rh = Math.abs(p.y - startY);
+  if (rw < 5 || rh < 5) return;
+
+  if (!drawnRects[currentPage]) drawnRects[currentPage] = [];
+  drawnRects[currentPage].push({
+    x: rx / canvas.width, y: ry / canvas.height,
+    w: rw / canvas.width, h: rh / canvas.height,
+  });
+  drawOverlay();
+  updateButtons();
+});
+
+canvas.addEventListener("mouseleave", () => { if (drawing) { drawing = false; drawOverlay(); } });
+
+function drawOverlay() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (isPreviewing) return; // No overlay during preview
+
+  const rects = drawnRects[currentPage] || [];
+  for (const r of rects) {
+    const px = r.x * canvas.width, py = r.y * canvas.height;
+    const pw = r.w * canvas.width, ph = r.h * canvas.height;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(px, py, pw, ph);
+    ctx.setLineDash([]);
+
+    // × button
+    const bx = px + pw - 18, by = py + 4, bs = 14;
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(bx, by, bs, bs);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(bx + 3, by + 3); ctx.lineTo(bx + bs - 3, by + bs - 3);
+    ctx.moveTo(bx + bs - 3, by + 3); ctx.lineTo(bx + 3, by + bs - 3);
+    ctx.stroke();
+  }
+}
+
+// Click to remove via ×
+canvas.addEventListener("click", e => {
+  if (mode !== "draw" || drawing || isPreviewing) return;
+  const p = canvasCoords(e);
+  const rects = drawnRects[currentPage] || [];
+  for (let i = rects.length - 1; i >= 0; i--) {
+    const r = rects[i];
+    const px = r.x * canvas.width, pw = r.w * canvas.width;
+    const py = r.y * canvas.height;
+    const bx = px + pw - 18, by = py + 4, bs = 14;
+    if (p.x >= bx && p.x <= bx + bs && p.y >= by && p.y <= by + bs) {
+      rects.splice(i, 1);
+      drawOverlay();
+      updateButtons();
+      return;
+    }
+  }
+});
+
+// ── Text search ─────────────────────────────────────────────────────────
+
+$("#searchBtn").addEventListener("click", doSearch);
+$("#searchInput").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+
+async function doSearch() {
+  const q = $("#searchInput").value.trim();
+  if (!q || !sessionId) return;
+  currentQuery = q;
+  try {
+    const res = await fetch(`/search/${sessionId}?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (data.total > 0) {
+      $("#matchInfo").textContent = `${data.total} match${data.total > 1 ? "es" : ""} on ${data.matches.length} page${data.matches.length > 1 ? "s" : ""}`;
+      currentPage = data.matches[0].page;
+    } else {
+      $("#matchInfo").textContent = "No matches";
+    }
+    updateButtons();
+    loadPage();
+  } catch (err) { showStatus(err.message, "error"); }
+}
+
+// ── Preview / Confirm / Cancel ──────────────────────────────────────────
+
+$("#previewBtn").addEventListener("click", preparePreview);
+$("#confirmBtn").addEventListener("click", confirmRedaction);
+$("#cancelBtn").addEventListener("click", cancelPreview);
+$("#clearBtn").addEventListener("click", () => {
+  drawnRects = {};
+  currentQuery = "";
+  $("#searchInput").value = "";
+  $("#matchInfo").textContent = "";
+  updateButtons();
+  loadPage();
+});
+
+async function preparePreview() {
+  const allRects = [];
+  for (const [page, rects] of Object.entries(drawnRects)) {
+    for (const r of rects) allRects.push({ page: parseInt(page), ...r });
+  }
+  const textQ = (mode === "text") ? currentQuery : "";
+
+  if (allRects.length === 0 && !textQ) return;
+
+  try {
+    const res = await fetch(`/prepare-redaction/${sessionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rects: allRects, text_query: textQ }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail);
+    const data = await res.json();
+
+    isPreviewing = true;
+    showStatus(`Preview: ${data.count} area${data.count > 1 ? "s" : ""} redacted. Browse pages to verify, then confirm or cancel.`, "info");
+
+    // Switch UI to preview mode
+    $("#editToolbar").style.display = "none";
+    $("#helpText").style.display = "none";
+    $("#previewBanner").classList.add("visible");
+    canvas.style.pointerEvents = "none";
+
+    currentPage = 0;
+    loadPage();
+  } catch (err) { showStatus(err.message, "error"); }
+}
+
+async function confirmRedaction() {
+  try {
+    const res = await fetch(`/confirm-redaction/${sessionId}`, { method: "POST" });
+    if (!res.ok) throw new Error((await res.json()).detail);
+
+    // Download
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "redacted.pdf";
+    a.click();
+    URL.revokeObjectURL(a.href);
+
+    exitPreviewMode();
+    showStatus("Redaction confirmed and file downloaded. You can continue editing or upload a new file.", "success");
+  } catch (err) { showStatus(err.message, "error"); }
+}
+
+async function cancelPreview() {
+  try {
+    await fetch(`/cancel-redaction/${sessionId}`, { method: "POST" });
+  } catch (_) {}
+  exitPreviewMode();
+  showStatus("Preview cancelled. Your selections are still in place — adjust and try again.", "info");
+}
+
+function exitPreviewMode() {
+  isPreviewing = false;
+  drawnRects = {};
+  currentQuery = "";
+  $("#searchInput").value = "";
+  $("#matchInfo").textContent = "";
+  $("#editToolbar").style.display = "flex";
+  $("#helpText").style.display = "block";
+  $("#previewBanner").classList.remove("visible");
+  canvas.style.pointerEvents = mode === "draw" ? "auto" : "none";
+  updateButtons();
+  loadPage();
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function resetControls() {
+  setMode("draw");
+  $("#matchInfo").textContent = "";
+  $("#searchInput").value = "";
+}
+
+function updateButtons() {
+  const hasDrawn = Object.values(drawnRects).some(a => a.length > 0);
+  const hasText = mode === "text" && currentQuery && ($("#matchInfo").textContent || "").includes("match");
+  $("#previewBtn").disabled = !hasDrawn && !hasText;
+  $("#clearBtn").disabled = !hasDrawn && !currentQuery;
+
+  const totalRects = Object.values(drawnRects).reduce((s, a) => s + a.length, 0);
+  if (mode === "draw" && totalRects > 0) {
+    $("#matchInfo").textContent = `${totalRects} area${totalRects > 1 ? "s" : ""} selected`;
+  }
+}
+
+function showStatus(msg, type) {
+  const el = $("#status"); el.textContent = msg; el.className = `status ${type}`;
+}
+function hideStatus() { $("#status").className = "status"; }
+</script>
+</body>
+</html>
