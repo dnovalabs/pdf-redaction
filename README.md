@@ -8,10 +8,23 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
 cd pdf-redactor
+uv run app.py --add-user admin yourpassword
 uv run app.py
 ```
 
-Open `http://localhost:8000`.
+Open `http://localhost:8000` and sign in with the credentials you just created.
+
+## Authentication
+
+All routes require login. User credentials are stored (hashed with PBKDF2-SHA256) in `config.json` under `auth.users`.
+
+**Add or update a user:**
+
+```bash
+uv run app.py --add-user USERNAME PASSWORD
+```
+
+Run this command for each user; then start the server normally. Sessions last 7 days and are invalidated on logout.
 
 ## Google Drive Setup
 

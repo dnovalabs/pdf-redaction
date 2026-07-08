@@ -144,6 +144,45 @@
     margin-top: 0.5rem; font-size: 0.78rem; color: #666; font-style: italic;
   }
 
+  /* Login overlay */
+  .login-overlay {
+    position: fixed; inset: 0; background: #111; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-card {
+    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+    padding: 2rem; width: 360px; max-width: 90vw;
+  }
+  .login-card h2 { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 0.25rem; }
+  .login-card p { font-size: 0.82rem; color: #666; margin-bottom: 1.5rem; }
+  .login-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+  .login-field label { font-size: 0.78rem; color: #aaa; font-weight: 500; }
+  .login-field input {
+    padding: 0.6rem 0.75rem; border: 1px solid #333; border-radius: 8px;
+    background: #111; color: #e0e0e0; font-size: 0.88rem; outline: none;
+  }
+  .login-field input:focus { border-color: #555; }
+  .btn-signin {
+    width: 100%; padding: 0.6rem; background: #2563eb; color: #fff;
+    border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; margin-top: 0.25rem;
+  }
+  .btn-signin:hover { background: #1d4ed8; }
+  .btn-signin:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
+  .login-error {
+    margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; border-radius: 6px;
+    background: #7f1d1d; color: #fca5a5; font-size: 0.8rem; display: none;
+  }
+
+  /* User info in header */
+  .user-info { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
+  .user-info span { font-size: 0.78rem; color: #666; }
+  .btn-signout {
+    padding: 0.3rem 0.65rem; background: #222; color: #888; border: 1px solid #333;
+    border-radius: 6px; font-size: 0.75rem; cursor: pointer;
+  }
+  .btn-signout:hover { background: #2a2a2a; color: #ccc; }
+
   /* Preview banner */
   .preview-banner {
     display: none; margin-top: 1rem; padding: 0.75rem 1rem;
@@ -157,10 +196,33 @@
 </head>
 <body>
 
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>PDF Redactor</h2>
+    <p>Sign in to continue</p>
+    <form id="loginForm" autocomplete="on">
+      <div class="login-field">
+        <label for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-signin" id="signinBtn">Sign in</button>
+    </form>
+  </div>
+</div>
+
 <header>
   <h1>PDF Redactor</h1>
   <span class="tag">True Redaction</span>
   <span class="drive-badge disconnected" id="driveBadge" style="display:none">Drive</span>
+  <div class="user-info" id="userInfo" style="display:none">
+    <span id="usernameDisplay"></span>
+    <button class="btn-signout" id="logoutBtn">Sign out</button>
+  </div>
 </header>
 
 <div class="container">
@@ -248,9 +310,83 @@ const img = $("#previewImg");
 const canvas = $("#overlay");
 const ctx = canvas.getContext("2d");
 
-// ── Config check on load ────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────
 
-(async function checkConfig() {
+async function checkAuth() {
+  try {
+    const res = await fetch("/me");
+    if (res.ok) {
+      const data = await res.json();
+      $("#usernameDisplay").textContent = data.username;
+      $("#userInfo").style.display = "flex";
+      $("#loginOverlay").style.display = "none";
+      checkConfig();
+    } else {
+      $("#loginOverlay").style.display = "flex";
+    }
+  } catch (_) {
+    $("#loginOverlay").style.display = "flex";
+  }
+}
+
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const username = $("#loginUsername").value.trim();
+  const password = $("#loginPassword").value;
+  const errEl = $("#loginError");
+  const btn = $("#signinBtn");
+
+  errEl.style.display = "none";
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+
+  try {
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      errEl.textContent = err.detail || "Login failed";
+      errEl.style.display = "block";
+    } else {
+      const data = await res.json();
+      $("#usernameDisplay").textContent = data.username;
+      $("#userInfo").style.display = "flex";
+      $("#loginOverlay").style.display = "none";
+      checkConfig();
+    }
+  } catch (_) {
+    errEl.textContent = "Network error. Please try again.";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Sign in";
+  }
+});
+
+$("#logoutBtn").addEventListener("click", async () => {
+  try { await fetch("/logout", { method: "POST" }); } catch (_) {}
+  sessionId = null;
+  pageCount = 0;
+  $("#userInfo").style.display = "none";
+  $("#fileInfo").style.display = "none";
+  $("#customerRow").classList.remove("visible");
+  $("#editToolbar").style.display = "none";
+  $("#previewWrap").style.display = "none";
+  $("#pageNav").style.display = "none";
+  $("#previewBanner").classList.remove("visible");
+  $("#helpText").style.display = "none";
+  hideStatus();
+  $("#loginOverlay").style.display = "flex";
+  $("#loginPassword").value = "";
+  $("#loginError").style.display = "none";
+});
+
+// ── Config check (called after auth) ─────────────────────────────────────
+
+async function checkConfig() {
   try {
     const res = await fetch("/config-status");
     storageConfig = await res.json();
@@ -267,7 +403,9 @@ const ctx = canvas.getContext("2d");
       }
     }
   } catch (_) {}
-})();
+}
+
+checkAuth();
 
 // ── Customer name → filename preview ────────────────────────────────────
 

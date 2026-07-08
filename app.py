@@ -1,13 +1,16 @@
 """PDF Redactor — redaction + Google Drive export."""
 
+import base64
+import hashlib
 import io
 import json
 import logging
+import secrets
 import uuid
 from pathlib import Path
 
 import fitz  # pymupdf
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Cookie, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -15,6 +18,7 @@ app = FastAPI(title="PDF Redactor")
 log = logging.getLogger("pdf-redactor")
 
 sessions: dict[str, dict] = {}
+auth_tokens: dict[str, str] = {}  # token → username
 PREVIEW_DPI = 150
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
@@ -47,6 +51,31 @@ def get_drive_service():
     return build("drive", "v3", credentials=creds)
 
 
+# ── Auth ─────────────────────────────────────────────────────────────────
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260_000)
+    return f"{salt}:{base64.b64encode(key).decode()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        salt, key_b64 = stored.split(":", 1)
+        key = base64.b64decode(key_b64)
+        check = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260_000)
+        return secrets.compare_digest(key, check)
+    except Exception:
+        return False
+
+
+def require_auth(auth_token: str | None = Cookie(default=None)) -> str:
+    if not auth_token or auth_token not in auth_tokens:
+        raise HTTPException(401, "Not authenticated")
+    return auth_tokens[auth_token]
+
+
 # ── Models ───────────────────────────────────────────────────────────────
 
 
@@ -65,6 +94,11 @@ class RedactRequest(BaseModel):
 
 class ConfirmRequest(BaseModel):
     customer_name: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
@@ -130,8 +164,36 @@ def index():
     return (Path(__file__).parent / "index.html").read_text()
 
 
+@app.get("/me")
+def me(user: str = Depends(require_auth)):
+    return {"username": user}
+
+
+@app.post("/login")
+def login(body: LoginRequest, response: Response):
+    users = load_config().get("auth", {}).get("users", {})
+    stored = users.get(body.username)
+    if not stored or not verify_password(body.password, stored):
+        raise HTTPException(401, "Invalid username or password")
+    token = secrets.token_hex(32)
+    auth_tokens[token] = body.username
+    response.set_cookie(
+        "auth_token", token,
+        httponly=True, samesite="strict", max_age=86400 * 7,
+    )
+    return {"status": "ok", "username": body.username}
+
+
+@app.post("/logout")
+def logout(response: Response, auth_token: str | None = Cookie(default=None)):
+    if auth_token and auth_token in auth_tokens:
+        del auth_tokens[auth_token]
+    response.delete_cookie("auth_token")
+    return {"status": "ok"}
+
+
 @app.get("/config-status")
-def config_status():
+def config_status(_: str = Depends(require_auth)):
     """Return current storage config (without secrets) so the UI can adapt."""
     cfg = load_config()
     storage = cfg.get("storage", {})
@@ -151,7 +213,7 @@ def config_status():
 
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), _: str = Depends(require_auth)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(400, "Only PDF files are accepted.")
     data = await file.read()
@@ -168,7 +230,7 @@ async def upload(file: UploadFile = File(...)):
 
 
 @app.get("/preview/{sid}/{page}")
-def preview_page(sid: str, page: int, search: str = "", pending: bool = False):
+def preview_page(sid: str, page: int, search: str = "", pending: bool = False, _: str = Depends(require_auth)):
     session = get_session(sid)
     src = session["pending_bytes"] if pending and session.get("pending_bytes") else session["doc_bytes"]
     doc = fitz.open(stream=src, filetype="pdf")
@@ -189,7 +251,7 @@ def preview_page(sid: str, page: int, search: str = "", pending: bool = False):
 
 
 @app.get("/search/{sid}")
-def search(sid: str, q: str = ""):
+def search(sid: str, q: str = "", _: str = Depends(require_auth)):
     if not q:
         return {"matches": [], "total": 0}
     doc = fitz.open(stream=get_session(sid)["doc_bytes"], filetype="pdf")
@@ -204,7 +266,7 @@ def search(sid: str, q: str = ""):
 
 
 @app.post("/prepare-redaction/{sid}")
-def prepare_redaction(sid: str, body: RedactRequest):
+def prepare_redaction(sid: str, body: RedactRequest, _: str = Depends(require_auth)):
     if not body.rects and not body.text_query:
         raise HTTPException(400, "No redaction targets provided.")
 
@@ -226,7 +288,7 @@ def prepare_redaction(sid: str, body: RedactRequest):
 
 
 @app.post("/confirm-download/{sid}")
-def confirm_download(sid: str, body: ConfirmRequest):
+def confirm_download(sid: str, body: ConfirmRequest, _: str = Depends(require_auth)):
     """Commit redaction and return the file for local download."""
     if not body.customer_name.strip():
         raise HTTPException(400, "Customer name is required.")
@@ -240,7 +302,7 @@ def confirm_download(sid: str, body: ConfirmRequest):
 
 
 @app.post("/confirm-send/{sid}")
-def confirm_send(sid: str, body: ConfirmRequest):
+def confirm_send(sid: str, body: ConfirmRequest, _: str = Depends(require_auth)):
     """Commit redaction and upload to Google Drive."""
     if not body.customer_name.strip():
         raise HTTPException(400, "Customer name is required.")
@@ -280,14 +342,40 @@ def confirm_send(sid: str, body: ConfirmRequest):
 
 
 @app.post("/cancel-redaction/{sid}")
-def cancel_redaction(sid: str):
+def cancel_redaction(sid: str, _: str = Depends(require_auth)):
     session = get_session(sid)
     session["pending_bytes"] = None
     return {"status": "cancelled"}
 
 
 def main():
+    import argparse
+
     import uvicorn
+
+    parser = argparse.ArgumentParser(description="PDF Redactor")
+    parser.add_argument(
+        "--add-user", nargs=2, metavar=("USERNAME", "PASSWORD"),
+        help="Add or update a user in config.json, then exit",
+    )
+    args, _ = parser.parse_known_args()
+
+    if args.add_user:
+        username, password = args.add_user
+        cfg = load_config()
+        cfg.setdefault("auth", {}).setdefault("users", {})[username] = hash_password(password)
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(cfg, f, indent=2)
+        print(f"User '{username}' saved to {CONFIG_PATH.name}.")
+        return
+
+    cfg = load_config()
+    if not cfg.get("auth", {}).get("users"):
+        print(
+            "WARNING: No users configured. Add one first:\n"
+            "  uv run app.py --add-user USERNAME PASSWORD"
+        )
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
