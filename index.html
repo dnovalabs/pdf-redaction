@@ -1,44 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Redactor</title>
+<title>PDF Redaktor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:             #fafafa;
-    --surface-1:      #ffffff;
-    --surface-2:      #f4f4f5;
-    --surface-3:      #ececed;
-    --border:         #e4e4e7;
-    --border-strong:  #d4d4d8;
-    --text-1:         #18181b;
-    --text-2:         #71717a;
-    --text-3:         #a1a1aa;
-    --accent:         #0d9488;
-    --accent-hover:   #0f766e;
-    --accent-light:   #f0fdfa;
-    --accent-dim:     rgba(13, 148, 136, .1);
-    --success:        #16a34a;
-    --success-bg:     #f0fdf4;
-    --success-border: #bbf7d0;
-    --error:          #dc2626;
-    --error-bg:       #fef2f2;
-    --error-border:   #fecaca;
-    --info:           #0284c7;
-    --info-bg:        #f0f9ff;
-    --info-border:    #bae6fd;
-    --shadow-sm:      0 1px 2px rgba(0, 0, 0, .06);
-    --shadow-md:      0 2px 8px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
-    --r-sm:           4px;
-    --r-md:           6px;
-    --r-input:        8px;
-    --r-lg:           10px;
-    --font-ui:        'Instrument Sans', system-ui, sans-serif;
-    --font-mono:      'Geist Mono', 'SF Mono', monospace;
+    --bg:              #e8e5dc;
+    --surface-1:       #ffffff;
+    --surface-2:       #f0ede5;
+    --surface-3:       #e5e2d9;
+    --border:          #d8d4c8;
+    --border-strong:   #bbb7ab;
+    --text-1:          #0c0c24;
+    --text-2:          #5a5770;
+    --text-3:          #9490a8;
+    --navy:            #0c0c24;
+    --cta:             #d4f34a;
+    --cta-hover:       #c2e040;
+    --success:         #16a34a;
+    --success-bg:      #f0fdf4;
+    --success-border:  #bbf7d0;
+    --error:           #dc2626;
+    --error-bg:        #fef2f2;
+    --error-border:    #fecaca;
+    --info:            #92400e;
+    --info-bg:         #fffbeb;
+    --info-border:     #fde68a;
+    --r-sm:            4px;
+    --r-md:            8px;
+    --r-lg:            12px;
+    --r-xl:            16px;
+    --shadow-sm:       0 1px 3px rgba(12,12,36,.06);
+    --shadow-md:       0 4px 16px rgba(12,12,36,.08), 0 1px 4px rgba(12,12,36,.04);
+    --font-ui:         'Inter', system-ui, sans-serif;
+    --font-mono:       'Geist Mono', 'SF Mono', monospace;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,402 +50,645 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* ── Header ─────────────────────────────────────────────────────────── */
   header {
-    padding: 0.75rem 2rem;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
-    background: var(--surface-1);
-    display: flex; align-items: center; gap: 0.75rem;
-    box-shadow: var(--shadow-sm);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  header h1 { font-size: 1rem; font-weight: 600; color: var(--text-1); }
 
-  header .tag {
-    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em;
-    padding: 0.2rem 0.5rem; border-radius: var(--r-sm); font-weight: 600;
+  .logo { display: flex; align-items: center; gap: 0.5rem; }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--navy);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.58rem; font-weight: 900; letter-spacing: 0.02em;
+    color: var(--cta);
+  }
+  .logo-text { font-size: 0.88rem; font-weight: 700; color: var(--navy); letter-spacing: -0.02em; }
+
+  .header-tag {
+    font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+    padding: 0.2rem 0.6rem; border-radius: 9999px;
     background: var(--error-bg); color: #991b1b; border: 1px solid var(--error-border);
   }
 
   .drive-badge {
-    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em;
-    padding: 0.2rem 0.5rem; border-radius: var(--r-sm); font-weight: 600;
+    font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0.2rem 0.6rem; border-radius: 9999px;
   }
-  .drive-badge.connected {
-    background: var(--success-bg); color: #15803d; border: 1px solid var(--success-border);
-  }
-  .drive-badge.disconnected {
-    background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border);
-  }
+  .drive-badge.connected  { background: var(--success-bg); color: #15803d; border: 1px solid var(--success-border); }
+  .drive-badge.disconnected { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
 
-  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; }
-
-  /* Upload */
-  .upload-zone {
-    border: 1.5px dashed var(--border-strong); border-radius: var(--r-lg);
-    padding: 3rem 2rem; text-align: center; cursor: pointer;
-    background: var(--surface-1);
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--accent); background: var(--accent-light);
-  }
-  .upload-zone p { color: var(--text-2); margin-top: 0.5rem; font-size: 0.875rem; }
-  .upload-zone .icon { font-size: 2rem; }
-  .upload-zone input { display: none; }
-
-  /* Customer name row */
-  .customer-row {
-    display: none; margin-top: 1rem; gap: 0.75rem; align-items: center;
-  }
-  .customer-row.visible { display: flex; }
-  .customer-row label {
-    font-size: 0.8rem; color: var(--text-2); white-space: nowrap; font-weight: 500;
-  }
-  .customer-row input {
-    flex: 1; max-width: 360px; padding: 0.45rem 0.75rem;
-    border: 1px solid var(--border-strong); border-radius: var(--r-input);
-    background: var(--surface-1); color: var(--text-1);
-    font-size: 0.8rem; outline: none; font-family: var(--font-ui);
-    box-shadow: var(--shadow-sm);
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .customer-row input:focus {
-    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-  .customer-row input.error {
-    border-color: var(--error); box-shadow: 0 0 0 3px rgba(220, 38, 38, .08);
-  }
-  .customer-row .filename-preview {
-    font-size: 0.73rem; color: var(--text-3); font-family: var(--font-mono);
-  }
-
-  /* Toolbar */
-  .toolbar {
-    display: flex; gap: 0.5rem; align-items: center;
-    margin-top: 0.75rem; flex-wrap: wrap;
-  }
-
-  .mode-tabs {
-    display: flex; border-radius: var(--r-md); overflow: hidden;
-    border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm);
-  }
-  .mode-tabs button {
-    padding: 0.45rem 1rem; border: none; border-radius: 0;
-    background: var(--surface-1); color: var(--text-2);
-    font-size: 0.75rem; font-weight: 500; cursor: pointer;
-    font-family: var(--font-ui);
-    transition: background 0.12s, color 0.12s, transform 0.1s ease-out;
-  }
-  .mode-tabs button:not(.active):hover { background: var(--surface-3); color: var(--text-1); }
-  .mode-tabs button.active { background: var(--accent); color: #fff; }
-  .mode-tabs button + button { border-left: 1px solid var(--border); }
-
-  .search-group { display: flex; gap: 0.5rem; flex: 1; min-width: 200px; }
-  .search-group input {
-    flex: 1; padding: 0.45rem 0.75rem;
-    border: 1px solid var(--border-strong); border-radius: var(--r-input);
-    background: var(--surface-1); color: var(--text-1);
-    font-size: 0.8rem; outline: none; font-family: var(--font-ui);
-    box-shadow: var(--shadow-sm);
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .search-group input:focus {
-    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  button {
-    padding: 0.45rem 1rem; border: none; border-radius: var(--r-md);
-    font-size: 0.75rem; font-weight: 500; cursor: pointer;
-    font-family: var(--font-ui);
-    transition: background 0.12s, box-shadow 0.12s, transform 0.1s ease-out, color 0.12s;
-  }
-  button:active:not(:disabled) { transform: scale(0.97); }
-  .btn-search {
-    background: var(--accent); color: #fff;
-    box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
-  }
-  .btn-search:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
-
-  .btn-preview {
-    background: var(--accent); color: #fff;
-    box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
-  }
-  .btn-preview:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
-
-  .btn-send {
-    background: var(--accent); color: #fff;
-    box-shadow: 0 1px 2px rgba(13, 148, 136, .2);
-  }
-  .btn-send:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
-
-  .btn-download {
-    background: var(--surface-1); color: var(--text-1);
-    border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm);
-  }
-  .btn-download:hover { background: var(--surface-2); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-
-  .btn-cancel {
-    background: transparent; color: var(--text-2); border: 1px solid var(--border);
-  }
-  .btn-cancel:hover { background: var(--surface-2); color: var(--text-1); }
-
-  .btn-clear {
-    background: transparent; color: var(--text-2); border: 1px solid var(--border);
-  }
-  .btn-clear:hover { background: var(--surface-2); color: var(--text-1); }
-
-  button:disabled { opacity: 0.4 !important; cursor: not-allowed; }
-
-  .spacer { flex: 1; }
-  .info { font-size: 0.73rem; color: var(--accent); font-family: var(--font-mono); }
-
-  /* Page nav */
-  .page-nav {
-    display: flex; align-items: center; justify-content: center;
-    gap: 1rem; margin-top: 0.75rem;
-  }
-  .page-nav button {
-    background: var(--surface-1); color: var(--text-2);
-    padding: 0.3rem 0.7rem; border-radius: var(--r-sm);
-    border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-  }
-  .page-nav button:hover { background: var(--surface-2); }
-  .page-nav span { font-size: 0.73rem; color: var(--text-3); font-family: var(--font-mono); }
-
-  /* Preview with canvas */
-  .preview-wrap {
-    position: relative; display: inline-block; margin-top: 0.75rem; max-width: 100%;
-  }
-  .preview-wrap img {
-    display: block; max-width: 100%; border-radius: var(--r-md);
-    border: 1px solid var(--border); box-shadow: var(--shadow-md);
-    user-select: none; -webkit-user-drag: none;
-  }
-  .preview-wrap canvas {
-    position: absolute; top: 0; left: 0; border-radius: var(--r-md); cursor: crosshair;
-  }
-  .preview-center { text-align: center; margin-top: 0.75rem; }
-
-  .status {
-    margin-top: 0.75rem; padding: 0.55rem 1rem; border-radius: var(--r-md);
-    font-size: 0.75rem; display: none; border: 1px solid;
-  }
-  .status.success {
-    display: block;
-    background: var(--success-bg); color: var(--success); border-color: var(--success-border);
-  }
-  .status.error {
-    display: block;
-    background: var(--error-bg); color: var(--error); border-color: var(--error-border);
-  }
-  .status.info {
-    display: block;
-    background: var(--info-bg); color: var(--info); border-color: var(--info-border);
-  }
-
-  .file-info {
-    margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-2);
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  .file-info .name { color: var(--text-1); font-weight: 500; }
-
-  .help-text {
-    margin-top: 0.5rem; font-size: 0.73rem; color: var(--text-3); font-style: italic;
-  }
-
-  /* Preview banner */
-  .preview-banner {
-    display: none; margin-top: 1rem; padding: 0.6rem 1rem;
-    background: var(--info-bg); border: 1px solid var(--info-border);
-    border-radius: var(--r-md); font-size: 0.8rem; color: var(--info);
-    align-items: center; gap: 0.75rem; flex-wrap: wrap;
-    position: relative; overflow: hidden;
-  }
-  .preview-banner.visible { display: flex; }
-  .preview-banner .label { flex: 1; min-width: 200px; }
-
-  /* Send progress bar */
-  .send-progress {
-    position: absolute; bottom: 0; left: 0; height: 3px; width: 0%;
-    background: var(--accent); border-radius: 0 0 var(--r-md) var(--r-md);
-    opacity: 0; pointer-events: none;
-  }
-  .send-progress.active { opacity: 1; }
-
-  /* Login overlay */
-  .login-overlay {
-    position: fixed; inset: 0; background: var(--bg); z-index: 100;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .login-card {
-    background: var(--surface-1); border: 1px solid var(--border);
-    border-radius: var(--r-lg); padding: 2rem; width: 360px; max-width: 90vw;
-    box-shadow: var(--shadow-md);
-  }
-  .login-card h2 {
-    font-size: 1rem; font-weight: 600; color: var(--text-1); margin-bottom: 0.25rem;
-  }
-  .login-card p { font-size: 0.8rem; color: var(--text-2); margin-bottom: 1.5rem; }
-  .login-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
-  .login-field label { font-size: 0.73rem; font-weight: 500; color: var(--text-2); }
-  .login-field input {
-    padding: 0.55rem 0.75rem; border: 1px solid var(--border-strong);
-    border-radius: var(--r-input); background: var(--surface-1); color: var(--text-1);
-    font-size: 0.85rem; outline: none; font-family: var(--font-ui);
-    box-shadow: var(--shadow-sm);
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .login-field input:focus {
-    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-  .btn-signin {
-    width: 100%; padding: 0.6rem; background: var(--accent); color: #fff;
-    border: none; border-radius: var(--r-md); font-family: var(--font-ui);
-    font-size: 0.85rem; font-weight: 500; cursor: pointer; margin-top: 0.25rem;
-    box-shadow: 0 1px 2px rgba(13, 148, 136, .25);
-    transition: background 0.12s, box-shadow 0.12s, transform 0.1s ease-out;
-  }
-  .btn-signin:hover { background: var(--accent-hover); box-shadow: 0 3px 10px rgba(13, 148, 136, .25); }
-  .btn-signin:active:not(:disabled) { transform: scale(0.98); }
-  .btn-signin:disabled { opacity: 0.4; cursor: not-allowed; }
-  .login-error {
-    margin-bottom: 0.75rem; padding: 0.45rem 0.75rem; border-radius: var(--r-sm);
-    background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border);
-    font-size: 0.75rem; display: none;
-  }
-
-  /* User info in header */
   .user-info { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; }
-  .user-info span { font-size: 0.73rem; color: var(--text-2); }
+  .user-info span { font-size: 0.75rem; color: var(--text-2); font-weight: 500; }
   .btn-signout {
-    padding: 0.3rem 0.6rem; background: transparent; color: var(--text-3);
-    border: 1px solid var(--border); border-radius: var(--r-sm);
-    font-size: 0.7rem; font-family: var(--font-ui); cursor: pointer;
+    padding: 0.3rem 0.65rem;
+    background: transparent; color: var(--text-2);
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    font-size: 0.72rem; font-weight: 600; font-family: var(--font-ui); cursor: pointer;
     transition: background 0.12s, color 0.12s;
   }
   .btn-signout:hover { background: var(--surface-2); color: var(--text-1); }
 
-  /* Toast notification */
+  /* ── Page wrap ───────────────────────────────────────────────────────── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+  /* ── Upload state ────────────────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    padding: 4rem 1rem 2.5rem;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-2);
+    border: 1px solid var(--border-strong); border-radius: 9999px;
+    padding: 0.3rem 0.9rem; margin-bottom: 1.75rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.6rem, 6vw, 4.5rem);
+    font-weight: 900; line-height: 1.0; letter-spacing: -0.04em;
+    color: var(--navy); text-transform: uppercase;
+    margin-bottom: 1.1rem;
+  }
+  .hero p {
+    font-size: 0.95rem; color: var(--text-2);
+    max-width: 440px; margin: 0 auto 2.5rem; line-height: 1.65;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--border-strong); border-radius: var(--r-xl);
+    padding: 3rem 2rem; text-align: center; cursor: pointer;
+    background: var(--surface-1);
+    box-shadow: var(--shadow-sm);
+    max-width: 520px; margin: 0 auto;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--navy); background: var(--surface-2); box-shadow: var(--shadow-md);
+  }
+  .upload-icon {
+    width: 46px; height: 46px; background: var(--navy); border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.1rem; font-size: 1.3rem;
+  }
+  .upload-zone h3 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); margin-bottom: 0.4rem; }
+  .upload-zone p  { font-size: 0.82rem; color: var(--text-2); line-height: 1.5; }
+  .upload-zone input { display: none; }
+  .btn-upload {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    margin-top: 1.4rem; padding: 0.6rem 1.4rem;
+    background: var(--navy); color: var(--cta);
+    border: none; border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; transition: background 0.12s, transform 0.1s ease-out;
+  }
+  .btn-upload:hover { background: #1e1e40; transform: translateY(-1px); }
+  .upload-formats {
+    margin-top: 0.85rem; font-size: 0.7rem; color: var(--text-3);
+    font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+
+  .feature-chips {
+    display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+    margin: 2rem auto 0; max-width: 520px;
+    padding-bottom: 3rem;
+    border-top: 1px dashed var(--border-strong);
+    padding-top: 1.75rem;
+  }
+  .feature-chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; font-weight: 600; color: var(--text-2);
+  }
+  .feature-chip-dot {
+    width: 18px; height: 18px; background: var(--navy); border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem; color: var(--cta); flex-shrink: 0;
+  }
+
+  /* ── App state (editor + preview) ───────────────────────────────────── */
+  .app-wrap { padding: 1.5rem 0 3rem; }
+
+  .app-layout {
+    display: grid;
+    grid-template-columns: 272px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  /* ── Preview banner ──────────────────────────────────────────────────── */
+  .preview-banner {
+    display: none; margin-bottom: 1.25rem;
+    background: var(--info-bg); border: 1px solid var(--info-border);
+    border-radius: var(--r-xl); padding: 0.9rem 1.25rem;
+    align-items: center; gap: 0.85rem; flex-wrap: wrap;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .preview-banner.visible { display: flex; }
+  .preview-banner-icon {
+    width: 30px; height: 30px; border-radius: var(--r-sm);
+    background: var(--info); display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+  .preview-banner-text { flex: 1; min-width: 180px; }
+  .preview-banner-text strong { display: block; font-size: 0.8rem; font-weight: 700; color: var(--navy); margin-bottom: 0.1rem; }
+  .preview-banner-text span   { font-size: 0.72rem; color: var(--info); font-weight: 500; }
+  .preview-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+
+  .btn-drive {
+    padding: 0.5rem 1.05rem;
+    background: var(--navy); color: var(--cta);
+    border: none; border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .btn-drive:hover { background: #1e1e40; }
+  .btn-drive:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-download {
+    padding: 0.5rem 1.05rem;
+    background: var(--cta); color: var(--navy);
+    border: none; border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.78rem; font-weight: 800;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .btn-download:hover { background: var(--cta-hover); }
+  .btn-download:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-cancel {
+    padding: 0.5rem 0.9rem;
+    background: transparent; color: var(--text-2);
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: background 0.12s, color 0.12s;
+  }
+  .btn-cancel:hover { background: var(--surface-2); color: var(--text-1); }
+  .btn-cancel:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .send-progress {
+    position: absolute; bottom: 0; left: 0; height: 3px; width: 0%;
+    background: var(--navy); border-radius: 0 0 var(--r-xl) var(--r-xl);
+    opacity: 0; pointer-events: none;
+  }
+  .send-progress.active { opacity: 1; }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .sidebar { display: flex; flex-direction: column; gap: 0.85rem; }
+
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: var(--r-xl); padding: 1.1rem 1.1rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel-title {
+    font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-3); margin-bottom: 0.85rem;
+  }
+
+  /* File row */
+  .file-row {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.6rem 0.75rem; margin-bottom: 0.85rem;
+    background: var(--surface-2); border-radius: var(--r-md); border: 1px solid var(--border);
+  }
+  .file-icon {
+    width: 30px; height: 30px; background: var(--navy); border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem; font-weight: 900; letter-spacing: 0.02em; color: var(--cta);
+    flex-shrink: 0;
+  }
+  .file-meta { min-width: 0; }
+  .file-name { font-size: 0.78rem; font-weight: 600; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-pages { font-size: 0.68rem; color: var(--text-3); font-weight: 500; font-family: var(--font-mono); }
+
+  /* Customer field */
+  .customer-field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .customer-field label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-2); }
+  .customer-field input {
+    width: 100%; padding: 0.5rem 0.7rem;
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    background: var(--surface-1); color: var(--text-1);
+    font-size: 0.82rem; font-family: var(--font-ui); font-weight: 500; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .customer-field input:focus {
+    border-color: var(--navy); box-shadow: 0 0 0 3px rgba(12,12,36,.08);
+  }
+  .customer-field input.error {
+    border-color: var(--error); box-shadow: 0 0 0 3px rgba(220,38,38,.08);
+  }
+  .customer-field input::placeholder { color: var(--text-3); }
+  .filename-preview { font-size: 0.68rem; color: var(--text-3); font-family: var(--font-mono); margin-top: 0.1rem; }
+
+  /* Mode tabs */
+  .mode-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem;
+    background: var(--surface-2); border-radius: var(--r-md); padding: 0.25rem;
+    border: 1px solid var(--border);
+  }
+  .mode-tab {
+    padding: 0.48rem 0.5rem; border: none;
+    border-radius: calc(var(--r-md) - 2px);
+    background: transparent; color: var(--text-2);
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    font-family: var(--font-ui); text-align: center;
+    transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+  }
+  .mode-tab.active { background: var(--navy); color: var(--cta); box-shadow: var(--shadow-sm); }
+  .mode-tab:not(.active):hover { background: var(--surface-3); color: var(--text-1); }
+
+  /* Search row */
+  .search-row { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+  .search-row input {
+    flex: 1; padding: 0.45rem 0.65rem;
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    background: var(--surface-1); color: var(--text-1);
+    font-size: 0.78rem; font-family: var(--font-ui); outline: none;
+    transition: border-color 0.12s;
+  }
+  .search-row input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(12,12,36,.08); }
+  .btn-find {
+    padding: 0.45rem 0.75rem;
+    background: var(--navy); color: var(--cta);
+    border: none; border-radius: var(--r-md);
+    font-size: 0.75rem; font-weight: 700; font-family: var(--font-ui); cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-find:hover { background: #1e1e40; }
+
+  .help-text { font-size: 0.75rem; color: var(--text-2); line-height: 1.5; margin-top: 0.75rem; }
+
+  /* Stats panel */
+  .stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.45rem 0; border-bottom: 1px dashed var(--border);
+  }
+  .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .stat-label { font-size: 0.72rem; color: var(--text-2); font-weight: 500; }
+  .stat-value { font-size: 0.72rem; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .stat-value.accent { color: var(--error); }
+
+  /* Sidebar action buttons */
+  .btn-stack { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .btn-primary {
+    width: 100%; padding: 0.68rem 1rem;
+    background: var(--cta); color: var(--navy);
+    border: none; border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.82rem; font-weight: 800; letter-spacing: -0.01em;
+    cursor: pointer; text-align: center;
+    transition: background 0.12s, transform 0.1s ease-out;
+  }
+  .btn-primary:hover { background: var(--cta-hover); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    width: 100%; padding: 0.62rem 1rem;
+    background: transparent; color: var(--text-1);
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; text-align: center;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .btn-secondary:hover { background: var(--surface-2); border-color: var(--navy); }
+  .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Canvas area ─────────────────────────────────────────────────────── */
+  .canvas-wrap {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-md);
+  }
+  .canvas-topbar {
+    padding: 0.7rem 1.1rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.6rem;
+    background: var(--surface-2);
+  }
+  .canvas-mode-label { font-size: 0.72rem; font-weight: 600; color: var(--text-2); }
+  .match-chip {
+    font-size: 0.68rem; font-weight: 700; color: var(--navy);
+    padding: 0.18rem 0.55rem; background: var(--cta); border-radius: 9999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .page-nav { display: flex; align-items: center; gap: 0.45rem; margin-left: auto; }
+  .btn-nav {
+    padding: 0.28rem 0.6rem;
+    border: 1.5px solid var(--border-strong); border-radius: var(--r-sm);
+    background: var(--surface-1); color: var(--text-2);
+    font-size: 0.72rem; font-weight: 600; font-family: var(--font-ui); cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-nav:hover:not(:disabled) { background: var(--surface-3); color: var(--text-1); }
+  .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page-label { font-size: 0.7rem; color: var(--text-3); font-weight: 600; font-family: var(--font-mono); min-width: 68px; text-align: center; }
+
+  .canvas-inner {
+    background: #cbc8bf;
+    min-height: 560px;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 1.5rem; overflow: auto;
+  }
+
+  .preview-center { text-align: center; }
+  .preview-wrap { position: relative; display: inline-block; }
+  .preview-wrap img {
+    display: block; max-width: 100%;
+    border-radius: var(--r-sm);
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    user-select: none; -webkit-user-drag: none;
+  }
+  .preview-wrap canvas { position: absolute; top: 0; left: 0; border-radius: var(--r-sm); cursor: crosshair; }
+
+  .canvas-bottombar {
+    padding: 0.6rem 1.1rem; border-top: 1px solid var(--border);
+    background: var(--surface-1); min-height: 42px;
+  }
+
+  /* ── Status ──────────────────────────────────────────────────────────── */
+  .status {
+    font-size: 0.75rem; border-radius: var(--r-md); border: 1px solid transparent;
+    padding: 0; display: none;
+  }
+  .status.success { display: block; padding: 0.5rem 0.85rem; background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+  .status.error   { display: block; padding: 0.5rem 0.85rem; background: var(--error-bg);   color: var(--error);   border-color: var(--error-border); }
+  .status.info    { display: block; padding: 0.5rem 0.85rem; background: var(--info-bg);    color: var(--info);    border-color: var(--info-border); }
+
+  /* ── Toast ───────────────────────────────────────────────────────────── */
   .toast {
     position: fixed; top: 1rem; right: 1rem; z-index: 200;
-    background: var(--success-bg); border: 1px solid var(--success-border);
-    color: var(--success); padding: 0.75rem 1rem;
-    border-radius: var(--r-lg); box-shadow: var(--shadow-md);
-    font-size: 0.8rem; max-width: 400px;
+    background: var(--navy); color: var(--cta);
+    padding: 0.75rem 1rem; border-radius: var(--r-lg); box-shadow: var(--shadow-md);
+    font-size: 0.78rem; font-weight: 600; max-width: 400px;
     display: flex; align-items: flex-start; gap: 0.6rem;
     opacity: 0; transform: translateY(-8px);
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
     pointer-events: none;
   }
   .toast.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .toast-dot { width: 6px; height: 6px; border-radius: 9999px; background: var(--cta); flex-shrink: 0; margin-top: 5px; }
   .toast-body { flex: 1; line-height: 1.5; }
-  .toast-body a { color: #15803d; font-weight: 500; }
+  .toast-body a { color: var(--cta); font-weight: 700; }
   .toast-close {
-    background: none; border: none; cursor: pointer; color: var(--success);
+    background: none; border: none; cursor: pointer; color: var(--cta);
     padding: 0; font-size: 0.85rem; line-height: 1; opacity: 0.55;
-    flex-shrink: 0; margin-top: 1px;
+    flex-shrink: 0; margin-top: 1px; font-family: var(--font-ui);
   }
   .toast-close:hover { opacity: 1; }
   .toast-close:active { transform: none; }
+
+  /* Toast error variant */
+  .toast.error-toast {
+    background: var(--error-bg); color: var(--error);
+    border: 1px solid var(--error-border);
+  }
+  .toast.error-toast .toast-dot { background: var(--error); }
+  .toast.error-toast .toast-close { color: var(--error); }
+
+  /* ── Login overlay ───────────────────────────────────────────────────── */
+  .login-overlay {
+    position: fixed; inset: 0; background: var(--bg); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: var(--r-xl); padding: 2rem 2rem 1.75rem; width: 360px; max-width: 90vw;
+    box-shadow: var(--shadow-md);
+  }
+  .login-logo { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .login-card h2 {
+    font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 900;
+    letter-spacing: -0.03em; text-transform: uppercase; color: var(--navy);
+    margin-bottom: 0.25rem;
+  }
+  .login-card p { font-size: 0.82rem; color: var(--text-2); margin-bottom: 1.5rem; }
+  .login-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
+  .login-field label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-2); }
+  .login-field input {
+    padding: 0.55rem 0.75rem; border: 1.5px solid var(--border-strong);
+    border-radius: var(--r-md); background: var(--surface-1); color: var(--text-1);
+    font-size: 0.85rem; outline: none; font-family: var(--font-ui);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .login-field input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(12,12,36,.08); }
+  .btn-signin {
+    width: 100%; padding: 0.65rem;
+    background: var(--navy); color: var(--cta);
+    border: none; border-radius: var(--r-md);
+    font-family: var(--font-ui); font-size: 0.85rem; font-weight: 800;
+    cursor: pointer; margin-top: 0.35rem;
+    transition: background 0.12s, transform 0.1s ease-out;
+  }
+  .btn-signin:hover { background: #1e1e40; transform: translateY(-1px); }
+  .btn-signin:active:not(:disabled) { transform: scale(0.98); }
+  .btn-signin:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .login-error {
+    margin-bottom: 0.75rem; padding: 0.45rem 0.75rem; border-radius: var(--r-sm);
+    background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border);
+    font-size: 0.75rem; display: none;
+  }
 </style>
 </head>
 <body>
 
+<!-- ── Login overlay ──────────────────────────────────────────────────── -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
-    <h2>PDF Redactor</h2>
-    <p>Sign in to continue</p>
+    <div class="login-logo">
+      <div class="logo-mark">PR</div>
+      <span class="logo-text">PDF Redaktor</span>
+    </div>
+    <h2>Přihlásit se</h2>
+    <p>Přístup k vašemu pracovnímu prostoru</p>
     <form id="loginForm" autocomplete="on">
       <div class="login-field">
-        <label for="loginUsername">Username</label>
+        <label for="loginUsername">Uživatelské jméno</label>
         <input type="text" id="loginUsername" autocomplete="username" required>
       </div>
       <div class="login-field">
-        <label for="loginPassword">Password</label>
+        <label for="loginPassword">Heslo</label>
         <input type="password" id="loginPassword" autocomplete="current-password" required>
       </div>
       <div class="login-error" id="loginError"></div>
-      <button type="submit" class="btn-signin" id="signinBtn">Sign in</button>
+      <button type="submit" class="btn-signin" id="signinBtn">Přihlásit se</button>
     </form>
   </div>
 </div>
 
+<!-- ── Header ─────────────────────────────────────────────────────────── -->
 <header>
-  <h1>PDF Redactor</h1>
-  <span class="tag">True Redaction</span>
+  <div class="logo">
+    <div class="logo-mark">Nova</div>
+    <span class="logo-text">Nova PDF Editor</span>
+  </div>
   <span class="drive-badge disconnected" id="driveBadge" style="display:none">Drive</span>
   <div class="user-info" id="userInfo" style="display:none">
     <span id="usernameDisplay"></span>
-    <button class="btn-signout" id="logoutBtn">Sign out</button>
+    <button class="btn-signout" id="logoutBtn">Odhlásit se</button>
   </div>
 </header>
 
-<div class="container">
-
-  <div class="upload-zone" id="dropZone">
-    <div class="icon">📄</div>
-    <p>Drop a PDF here or click to upload</p>
-    <input type="file" id="fileInput" accept=".pdf">
-  </div>
-
-  <div class="file-info" id="fileInfo" style="display:none">
-    <span>Loaded:</span>
-    <span class="name" id="fileName"></span>
-    <span id="pageCount"></span>
-  </div>
-
-  <!-- Customer name -->
-  <div class="customer-row" id="customerRow">
-    <label for="customerName">Customer name</label>
-    <input type="text" id="customerName" placeholder="Required — used as the output filename">
-    <span class="filename-preview" id="filenamePreview"></span>
-  </div>
-
-  <!-- Edit toolbar -->
-  <div class="toolbar" id="editToolbar" style="display:none">
-    <div class="mode-tabs">
-      <button class="active" data-mode="draw" id="modeDrawBtn">Draw</button>
-      <button data-mode="text" id="modeTextBtn">Text Search</button>
+<!-- ════════════════════════════════════════════════════════════
+     UPLOAD STATE
+════════════════════════════════════════════════════════════ -->
+<div id="uploadState">
+  <div class="page-wrap">
+    <div class="hero">
+      <div class="hero-eyebrow">
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><circle cx="4" cy="4" r="3" fill="currentColor" opacity=".4"/><circle cx="4" cy="4" r="1.5" fill="currentColor"/></svg>
+        Bezpečné · Žádná uložená data
+      </div>
+      <h1>Nova PDF Editor.<br>Hotovo za minutu.</h1>
+      <p>Nahrajte dokument, označte citlivé oblasti a exportujte čistý redigovaný soubor — přímo do Google Drive nebo jako stažení.</p>
     </div>
-    <div class="search-group" id="searchGroup" style="display:none">
-      <input type="text" id="searchInput" placeholder="Search text…">
-      <button class="btn-search" id="searchBtn">Find</button>
+
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📄</div>
+      <h3>Přetáhněte PDF sem</h3>
+      <p>Přetáhněte nebo procházejte pro nahrání.<br>Veškeré zpracování probíhá na vašem serveru.</p>
+      <button class="btn-upload" type="button">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M4 3.5l2.5-2.5L9 3.5M2 9.5v.5A1.5 1.5 0 003.5 11.5h6A1.5 1.5 0 0011 10v-.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Procházet soubory
+      </button>
+      <p class="upload-formats">Pouze soubory PDF</p>
+      <input type="file" id="fileInput" accept=".pdf">
     </div>
-    <span class="info" id="matchInfo"></span>
-    <span class="spacer"></span>
-    <button class="btn-clear" id="clearBtn" disabled>Clear</button>
-    <button class="btn-preview" id="previewBtn" disabled>Preview Redaction</button>
-  </div>
 
-  <!-- Preview confirmation banner -->
-  <div class="preview-banner" id="previewBanner">
-    <span class="label">Previewing redacted result — check each page before confirming.</span>
-    <button class="btn-send" id="sendBtn" style="display:none">Send to Drive</button>
-    <button class="btn-download" id="downloadBtn">Download</button>
-    <button class="btn-cancel" id="cancelBtn">Cancel</button>
-    <div class="send-progress" id="sendProgress"></div>
-  </div>
-
-  <p class="help-text" id="helpText" style="display:none">
-    Click and drag on the page to mark areas for redaction.
-  </p>
-
-  <div class="page-nav" id="pageNav" style="display:none">
-    <button id="prevBtn">← Prev</button>
-    <span id="pageLabel">Page 1 / 1</span>
-    <button id="nextBtn">Next →</button>
-  </div>
-
-  <div class="preview-center" id="previewCenter">
-    <div class="preview-wrap" id="previewWrap" style="display:none">
-      <img id="previewImg" alt="Page preview">
-      <canvas id="overlay"></canvas>
+    <div class="feature-chips">
+      <span class="feature-chip"><span class="feature-chip-dot">✓</span> Kreslení pro redigování</span>
+      <span class="feature-chip"><span class="feature-chip-dot">✓</span> Textové vyhledávání</span>
+      <span class="feature-chip"><span class="feature-chip-dot">✓</span> Export do Google Drive</span>
     </div>
   </div>
-
-  <div class="status" id="status"></div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     APP STATE (editor + preview)
+════════════════════════════════════════════════════════════ -->
+<div id="appState" style="display:none">
+  <div class="page-wrap app-wrap">
+
+    <!-- Preview mode banner -->
+    <div class="preview-banner" id="previewBanner">
+      <div class="preview-banner-icon">👁</div>
+      <div class="preview-banner-text">
+        <strong>Náhled redigovaného výsledku</strong>
+        <span id="previewBannerSub">Projděte všechny stránky pro ověření před potvrzením.</span>
+      </div>
+      <div class="preview-actions">
+        <button class="btn-drive" id="sendBtn" style="display:none">Odeslat na Drive</button>
+        <button class="btn-download" id="downloadBtn">Stáhnout</button>
+        <button class="btn-cancel" id="cancelBtn">Zrušit</button>
+        <div class="send-progress" id="sendProgress"></div>
+      </div>
+    </div>
+
+    <div class="app-layout">
+
+      <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+      <aside class="sidebar">
+
+        <!-- Document panel -->
+        <div class="panel">
+          <p class="panel-title">Dokument</p>
+          <div class="file-row">
+            <div class="file-icon">PDF</div>
+            <div class="file-meta">
+              <div class="file-name" id="fileName"></div>
+              <div class="file-pages" id="pageCount"></div>
+            </div>
+          </div>
+          <div class="customer-field">
+            <label for="customerName">Jméno zákazníka</label>
+            <input type="text" id="customerName" placeholder="Povinné — použito jako název souboru">
+            <span class="filename-preview" id="filenamePreview"></span>
+          </div>
+        </div>
+
+        <!-- Tool panel (hidden in preview mode) -->
+        <div class="panel" id="sidebarToolPanel">
+          <p class="panel-title">Nástroj pro redigování</p>
+          <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="draw" id="modeDrawBtn">Kreslit</button>
+            <button class="mode-tab" data-mode="text" id="modeTextBtn">Hledat text</button>
+          </div>
+          <div class="search-row" id="searchGroup" style="display:none">
+            <input type="text" id="searchInput" placeholder="Hledat text…">
+            <button class="btn-find" id="searchBtn">Najít</button>
+          </div>
+          <p class="help-text" id="helpText">Klikněte a táhněte na dokument pro označení oblastí k redigování.</p>
+        </div>
+
+        <!-- Stats panel -->
+        <div class="panel">
+          <p class="panel-title" id="statsPanelTitle">Relace</p>
+          <div class="stat-row" id="statRowAreas">
+            <span class="stat-label" id="statsAreasLabel">Vybrané oblasti</span>
+            <span class="stat-value accent" id="statsAreasValue">0</span>
+          </div>
+          <div class="stat-row" id="statRowPage">
+            <span class="stat-label">Aktuální stránka</span>
+            <span class="stat-value" id="statsPageValue">1 / 1</span>
+          </div>
+          <div class="stat-row" id="statRowCustomer" style="display:none">
+            <span class="stat-label">Zákazník</span>
+            <span class="stat-value" id="statsCustomerValue"></span>
+          </div>
+          <div class="stat-row" id="statRowOutput" style="display:none">
+            <span class="stat-label">Výstupní soubor</span>
+            <span class="stat-value" id="statsOutputValue" style="font-family:var(--font-mono); font-size:0.68rem;"></span>
+          </div>
+        </div>
+
+        <!-- Edit actions (hidden in preview mode) -->
+        <div class="btn-stack" id="sidebarActionsEdit">
+          <button class="btn-primary" id="previewBtn" disabled>Náhled →</button>
+          <button class="btn-secondary" id="clearBtn" disabled>Zrušit</button>
+        </div>
+
+      </aside>
+
+      <!-- ── Canvas ──────────────────────────────────────────────────── -->
+      <div class="canvas-wrap">
+        <div class="canvas-topbar">
+          <span class="canvas-mode-label" id="canvasModeLabel">Režim kreslení</span>
+          <span class="match-chip" id="matchInfo" style="display:none"></span>
+          <div class="page-nav" id="pageNav">
+            <button class="btn-nav" id="prevBtn" disabled>← Předchozí</button>
+            <span class="page-label" id="pageLabel">Stránka 1 / 1</span>
+            <button class="btn-nav" id="nextBtn" disabled>Další →</button>
+          </div>
+        </div>
+
+        <div class="canvas-inner">
+          <div class="preview-center" id="previewCenter">
+            <div class="preview-wrap" id="previewWrap">
+              <img id="previewImg" alt="Page preview">
+              <canvas id="overlay"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-bottombar">
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────── -->
 <div class="toast" id="toast">
+  <div class="toast-dot"></div>
   <span class="toast-body" id="toastMsg"></span>
   <button class="toast-close" id="toastClose" aria-label="Dismiss">✕</button>
 </div>
@@ -464,14 +706,37 @@ let drawing = false;
 let startX = 0, startY = 0;
 let isPreviewing = false;
 
-// Storage config from server
 let storageConfig = { storage_type: "none", credentials_ok: false, file_naming_pattern: "{customer_name}.pdf" };
 
 const img = $("#previewImg");
 const canvas = $("#overlay");
 const ctx = canvas.getContext("2d");
 
-// ── Auth ─────────────────────────────────────────────────────────────────
+// ── State helpers ─────────────────────────────────────────────────────
+
+function showUploadState() {
+  $("#uploadState").style.display = "";
+  $("#appState").style.display = "none";
+}
+
+function showAppState() {
+  $("#uploadState").style.display = "none";
+  $("#appState").style.display = "block";
+}
+
+function setMatchInfo(text) {
+  const el = $("#matchInfo");
+  el.textContent = text;
+  el.style.display = text ? "" : "none";
+}
+
+function updateStats() {
+  const total = Object.values(drawnRects).reduce((s, a) => s + a.length, 0);
+  $("#statsAreasValue").textContent = total;
+  if (pageCount > 0) $("#statsPageValue").textContent = `${currentPage + 1} / ${pageCount}`;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────
 
 async function checkAuth() {
   try {
@@ -499,7 +764,7 @@ $("#loginForm").addEventListener("submit", async e => {
 
   errEl.style.display = "none";
   btn.disabled = true;
-  btn.textContent = "Signing in…";
+  btn.textContent = "Přihlašování…";
 
   try {
     const res = await fetch("/login", {
@@ -509,7 +774,7 @@ $("#loginForm").addEventListener("submit", async e => {
     });
     if (!res.ok) {
       const err = await res.json();
-      errEl.textContent = err.detail || "Login failed";
+      errEl.textContent = err.detail || "Přihlášení selhalo";
       errEl.style.display = "block";
     } else {
       const data = await res.json();
@@ -519,11 +784,11 @@ $("#loginForm").addEventListener("submit", async e => {
       checkConfig();
     }
   } catch (_) {
-    errEl.textContent = "Network error. Please try again.";
+    errEl.textContent = "Chyba sítě. Zkuste to prosím znovu.";
     errEl.style.display = "block";
   } finally {
     btn.disabled = false;
-    btn.textContent = "Sign in";
+    btn.textContent = "Přihlásit se";
   }
 });
 
@@ -532,26 +797,19 @@ $("#logoutBtn").addEventListener("click", async () => {
   sessionId = null;
   pageCount = 0;
   $("#userInfo").style.display = "none";
-  $("#fileInfo").style.display = "none";
-  $("#customerRow").classList.remove("visible");
-  $("#editToolbar").style.display = "none";
-  $("#previewWrap").style.display = "none";
-  $("#pageNav").style.display = "none";
-  $("#previewBanner").classList.remove("visible");
-  $("#helpText").style.display = "none";
+  showUploadState();
   hideStatus();
   $("#loginOverlay").style.display = "flex";
   $("#loginPassword").value = "";
   $("#loginError").style.display = "none";
 });
 
-// ── Config check (called after auth) ─────────────────────────────────────
+// ── Config check ─────────────────────────────────────────────────────
 
 async function checkConfig() {
   try {
     const res = await fetch("/config-status");
     storageConfig = await res.json();
-
     const badge = $("#driveBadge");
     if (storageConfig.storage_type === "google_drive") {
       badge.style.display = "";
@@ -568,7 +826,7 @@ async function checkConfig() {
 
 checkAuth();
 
-// ── Customer name → filename preview ────────────────────────────────────
+// ── Customer name → filename preview ─────────────────────────────────
 
 $("#customerName").addEventListener("input", () => {
   const name = $("#customerName").value.trim();
@@ -581,12 +839,13 @@ $("#customerName").addEventListener("input", () => {
   }
 });
 
-// ── Upload ──────────────────────────────────────────────────────────────
+// ── Upload ────────────────────────────────────────────────────────────
 
 const dropZone = $("#dropZone");
 const fileInput = $("#fileInput");
 
 dropZone.addEventListener("click", () => fileInput.click());
+dropZone.querySelector(".btn-upload").addEventListener("click", e => { e.stopPropagation(); fileInput.click(); });
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
 dropZone.addEventListener("drop", e => {
@@ -611,40 +870,38 @@ async function uploadFile(file) {
     isPreviewing = false;
 
     $("#fileName").textContent = data.filename;
-    $("#pageCount").textContent = `· ${pageCount} page${pageCount > 1 ? "s" : ""}`;
-    $("#fileInfo").style.display = "flex";
-    $("#customerRow").classList.add("visible");
-    $("#editToolbar").style.display = "flex";
-    $("#helpText").style.display = "block";
-    $("#pageNav").style.display = "flex";
-    $("#previewWrap").style.display = "inline-block";
+    $("#pageCount").textContent = `${pageCount} ${pageCount === 1 ? "stránka" : pageCount < 5 ? "stránky" : "stránek"}`;
     $("#previewBanner").classList.remove("visible");
 
+    showAppState();
     resetControls();
     hideStatus();
     loadPage();
-  } catch (err) { showStatus(err.message, "error"); }
+  } catch (err) {
+    showToast(err.message, 6000, "error");
+  }
 }
 
-// ── Mode switching ──────────────────────────────────────────────────────
+// ── Mode switching ────────────────────────────────────────────────────
 
 $("#modeDrawBtn").addEventListener("click", () => setMode("draw"));
 $("#modeTextBtn").addEventListener("click", () => setMode("text"));
 
 function setMode(m) {
   mode = m;
-  document.querySelectorAll(".mode-tabs button").forEach(b =>
+  document.querySelectorAll(".mode-tab").forEach(b =>
     b.classList.toggle("active", b.dataset.mode === m));
   $("#searchGroup").style.display = m === "text" ? "flex" : "none";
   $("#helpText").textContent = m === "draw"
-    ? "Click and drag on the page to mark areas for redaction."
-    : "Search for text to highlight matches, then preview redaction.";
+    ? "Klikněte a táhněte na dokument pro označení oblastí k redigování."
+    : "Vyhledejte text pro zvýraznění shod, poté zobrazte náhled redigování.";
   canvas.style.pointerEvents = m === "draw" ? "auto" : "none";
+  $("#canvasModeLabel").textContent = m === "draw" ? "Režim kreslení" : "Režim textového vyhledávání";
   if (m === "text") { currentQuery = ""; loadPage(); }
   updateButtons();
 }
 
-// ── Page navigation ─────────────────────────────────────────────────────
+// ── Page navigation ───────────────────────────────────────────────────
 
 $("#prevBtn").addEventListener("click", () => { if (currentPage > 0) { currentPage--; loadPage(); } });
 $("#nextBtn").addEventListener("click", () => { if (currentPage < pageCount - 1) { currentPage++; loadPage(); } });
@@ -657,9 +914,10 @@ function loadPage() {
     url += `&search=${encodeURIComponent(currentQuery)}`;
   }
   img.src = url;
-  $("#pageLabel").textContent = `Page ${currentPage + 1} / ${pageCount}`;
+  $("#pageLabel").textContent = `Stránka ${currentPage + 1} / ${pageCount}`;
   $("#prevBtn").disabled = currentPage === 0;
   $("#nextBtn").disabled = currentPage >= pageCount - 1;
+  updateStats();
 }
 
 img.addEventListener("load", () => {
@@ -675,13 +933,13 @@ window.addEventListener("resize", () => {
   canvas.style.height = img.clientHeight + "px";
 });
 
-// ── Drawing ─────────────────────────────────────────────────────────────
+// ── Drawing ───────────────────────────────────────────────────────────
 
 function canvasCoords(e) {
   const rect = canvas.getBoundingClientRect();
   return {
     x: (e.clientX - rect.left) * (canvas.width / rect.width),
-    y: (e.clientY - rect.top) * (canvas.height / rect.height),
+    y: (e.clientY - rect.top)  * (canvas.height / rect.height),
   };
 }
 
@@ -698,8 +956,8 @@ canvas.addEventListener("mousemove", e => {
   drawOverlay();
   const rx = Math.min(startX, p.x), ry = Math.min(startY, p.y);
   const rw = Math.abs(p.x - startX), rh = Math.abs(p.y - startY);
-  ctx.fillStyle = "rgba(13, 148, 136, 0.1)";
-  ctx.strokeStyle = "#0d9488";
+  ctx.fillStyle = "rgba(12, 12, 36, 0.08)";
+  ctx.strokeStyle = "#0c0c24";
   ctx.lineWidth = 1.5;
   ctx.setLineDash([6, 3]);
   ctx.fillRect(rx, ry, rw, rh);
@@ -714,7 +972,6 @@ canvas.addEventListener("mouseup", e => {
   const rx = Math.min(startX, p.x), ry = Math.min(startY, p.y);
   const rw = Math.abs(p.x - startX), rh = Math.abs(p.y - startY);
   if (rw < 5 || rh < 5) return;
-
   if (!drawnRects[currentPage]) drawnRects[currentPage] = [];
   drawnRects[currentPage].push({
     x: rx / canvas.width, y: ry / canvas.height,
@@ -729,21 +986,19 @@ canvas.addEventListener("mouseleave", () => { if (drawing) { drawing = false; dr
 function drawOverlay() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (isPreviewing) return;
-
   const rects = drawnRects[currentPage] || [];
   for (const r of rects) {
     const px = r.x * canvas.width, py = r.y * canvas.height;
     const pw = r.w * canvas.width, ph = r.h * canvas.height;
-    ctx.fillStyle = "rgba(13, 148, 136, 0.1)";
+    ctx.fillStyle = "rgba(12, 12, 36, 0.08)";
     ctx.fillRect(px, py, pw, ph);
-    ctx.strokeStyle = "#0d9488";
+    ctx.strokeStyle = "#0c0c24";
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 3]);
     ctx.strokeRect(px, py, pw, ph);
     ctx.setLineDash([]);
-
     const bx = px + pw - 18, by = py + 4, bs = 14;
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(bx, by, bs, bs);
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 1.5;
@@ -773,7 +1028,7 @@ canvas.addEventListener("click", e => {
   }
 });
 
-// ── Text search ─────────────────────────────────────────────────────────
+// ── Text search ───────────────────────────────────────────────────────
 
 $("#searchBtn").addEventListener("click", doSearch);
 $("#searchInput").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
@@ -786,17 +1041,17 @@ async function doSearch() {
     const res = await fetch(`/search/${sessionId}?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     if (data.total > 0) {
-      $("#matchInfo").textContent = `${data.total} match${data.total > 1 ? "es" : ""} on ${data.matches.length} page${data.matches.length > 1 ? "s" : ""}`;
+      setMatchInfo(`${data.total} ${data.total === 1 ? "shoda" : data.total < 5 ? "shody" : "shod"} na ${data.matches.length} ${data.matches.length === 1 ? "stránce" : "stránkách"}`);
       currentPage = data.matches[0].page;
     } else {
-      $("#matchInfo").textContent = "No matches";
+      setMatchInfo("Žádné shody");
     }
     updateButtons();
     loadPage();
   } catch (err) { showStatus(err.message, "error"); }
 }
 
-// ── Preview / Send / Download / Cancel ──────────────────────────────────
+// ── Preview / Send / Download / Cancel ───────────────────────────────
 
 $("#previewBtn").addEventListener("click", preparePreview);
 $("#sendBtn").addEventListener("click", () => confirmAction("send"));
@@ -806,7 +1061,7 @@ $("#clearBtn").addEventListener("click", () => {
   drawnRects = {};
   currentQuery = "";
   $("#searchInput").value = "";
-  $("#matchInfo").textContent = "";
+  setMatchInfo("");
   updateButtons();
   loadPage();
 });
@@ -816,7 +1071,7 @@ function getCustomerName() {
   if (!name) {
     $("#customerName").classList.add("error");
     $("#customerName").focus();
-    showStatus("Customer name is required.", "error");
+    showStatus("Jméno zákazníka je povinné.", "error");
     return null;
   }
   return name;
@@ -830,7 +1085,7 @@ async function preparePreview() {
   for (const [page, rects] of Object.entries(drawnRects)) {
     for (const r of rects) allRects.push({ page: parseInt(page), ...r });
   }
-  const textQ = (mode === "text") ? currentQuery : "";
+  const textQ = mode === "text" ? currentQuery : "";
   if (allRects.length === 0 && !textQ) return;
 
   try {
@@ -843,17 +1098,28 @@ async function preparePreview() {
     const data = await res.json();
 
     isPreviewing = true;
-    showStatus(`Preview: ${data.count} area${data.count > 1 ? "s" : ""} redacted. Browse pages to verify, then send or download.`, "info");
 
-    $("#editToolbar").style.display = "none";
-    $("#helpText").style.display = "none";
+    const outputFile = storageConfig.file_naming_pattern.replace("{customer_name}", customerName);
+    $("#previewBannerSub").textContent = `${data.count} ${data.count === 1 ? "oblast" : data.count < 5 ? "oblasti" : "oblastí"} redigováno. Projděte všechny stránky pro ověření.`;
+    $("#statsPanelTitle").textContent = "Shrnutí redigování";
+    $("#statsAreasLabel").textContent = "Redigované oblasti";
+    $("#statsAreasValue").textContent = data.count;
+    $("#statRowPage").style.display = "none";
+    $("#statRowCustomer").style.display = "";
+    $("#statsCustomerValue").textContent = customerName;
+    $("#statRowOutput").style.display = "";
+    $("#statsOutputValue").textContent = outputFile;
+
+    $("#sidebarToolPanel").style.display = "none";
+    $("#sidebarActionsEdit").style.display = "none";
     $("#previewBanner").classList.add("visible");
+    $("#canvasModeLabel").textContent = "Režim náhledu";
     canvas.style.pointerEvents = "none";
 
-    // Show/hide Send to Drive based on config
     const driveAvailable = storageConfig.storage_type === "google_drive" && storageConfig.credentials_ok;
     $("#sendBtn").style.display = driveAvailable ? "" : "none";
 
+    hideStatus();
     currentPage = 0;
     loadPage();
   } catch (err) { showStatus(err.message, "error"); }
@@ -864,7 +1130,6 @@ async function confirmAction(action) {
   if (!customerName) return;
 
   const endpoint = action === "send" ? "confirm-send" : "confirm-download";
-
   const sendBtn = $("#sendBtn");
   const downloadBtn = $("#downloadBtn");
   const cancelBtn = $("#cancelBtn");
@@ -872,7 +1137,7 @@ async function confirmAction(action) {
   if (action === "send") {
     startSendProgress();
     sendBtn.disabled = true;
-    sendBtn.textContent = "Sending…";
+    sendBtn.textContent = "Odesílání…";
     downloadBtn.disabled = true;
     cancelBtn.disabled = true;
   }
@@ -883,19 +1148,17 @@ async function confirmAction(action) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customer_name: customerName }),
     });
-
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || res.statusText);
     }
-
     if (action === "send") {
       const data = await res.json();
       completeSendProgress();
       resetToInitial();
       const link = data.web_link
-        ? `Sent to Google Drive: <a href="${data.web_link}" target="_blank">${data.file_name}</a>`
-        : `Sent to Google Drive as ${data.file_name}`;
+        ? `Odesláno na Google Drive: <a href="${data.web_link}" target="_blank">${data.file_name}</a>`
+        : `Odesláno na Google Drive jako ${data.file_name}`;
       showToast(link);
     } else {
       const blob = await res.blob();
@@ -905,13 +1168,13 @@ async function confirmAction(action) {
       a.click();
       URL.revokeObjectURL(a.href);
       resetToInitial();
-      showToast("File downloaded successfully.");
+      showToast("Soubor byl úspěšně stažen.");
     }
   } catch (err) {
     if (action === "send") {
       resetSendProgress();
       sendBtn.disabled = false;
-      sendBtn.textContent = "Send to Drive";
+      sendBtn.textContent = "Odeslat na Drive";
       downloadBtn.disabled = false;
       cancelBtn.disabled = false;
     }
@@ -922,7 +1185,7 @@ async function confirmAction(action) {
 async function cancelPreview() {
   try { await fetch(`/cancel-redaction/${sessionId}`, { method: "POST" }); } catch (_) {}
   exitPreviewMode();
-  showStatus("Preview cancelled. Your selections are still in place.", "info");
+  showStatus("Náhled zrušen. Vaše výběry jsou stále zachovány.", "info");
 }
 
 function exitPreviewMode() {
@@ -930,20 +1193,29 @@ function exitPreviewMode() {
   drawnRects = {};
   currentQuery = "";
   $("#searchInput").value = "";
-  $("#matchInfo").textContent = "";
-  $("#editToolbar").style.display = "flex";
-  $("#helpText").style.display = "block";
+  setMatchInfo("");
+
+  $("#sidebarToolPanel").style.display = "";
+  $("#sidebarActionsEdit").style.display = "flex";
   $("#previewBanner").classList.remove("visible");
+
+  $("#statsPanelTitle").textContent = "Relace";
+  $("#statsAreasLabel").textContent = "Vybrané oblasti";
+  $("#statRowPage").style.display = "";
+  $("#statRowCustomer").style.display = "none";
+  $("#statRowOutput").style.display = "none";
+
   canvas.style.pointerEvents = mode === "draw" ? "auto" : "none";
+  setMode("draw");
   updateButtons();
   loadPage();
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────
 
 function resetControls() {
   setMode("draw");
-  $("#matchInfo").textContent = "";
+  setMatchInfo("");
   $("#searchInput").value = "";
   $("#customerName").value = "";
   $("#filenamePreview").textContent = "";
@@ -955,21 +1227,21 @@ function updateButtons() {
   $("#previewBtn").disabled = !hasDrawn && !hasText;
   $("#clearBtn").disabled = !hasDrawn && !currentQuery;
 
-  const totalRects = Object.values(drawnRects).reduce((s, a) => s + a.length, 0);
-  if (mode === "draw" && totalRects > 0) {
-    $("#matchInfo").textContent = `${totalRects} area${totalRects > 1 ? "s" : ""} selected`;
+  const total = Object.values(drawnRects).reduce((s, a) => s + a.length, 0);
+  if (mode === "draw" && total > 0) {
+    setMatchInfo(`${total} ${total === 1 ? "oblast" : total < 5 ? "oblasti" : "oblastí"} vybráno`);
+  } else if (mode === "draw" && total === 0) {
+    setMatchInfo("");
   }
+  updateStats();
 }
 
 function showStatus(msg, type) {
   const el = $("#status"); el.textContent = msg; el.className = `status ${type}`;
 }
-function showStatusHTML(html, type) {
-  const el = $("#status"); el.innerHTML = html; el.className = `status ${type}`;
-}
 function hideStatus() { $("#status").className = "status"; }
 
-// ── Send progress bar ────────────────────────────────────────────────────
+// ── Send progress bar ─────────────────────────────────────────────────
 
 let sendProgressTimer = null;
 
@@ -979,15 +1251,10 @@ function startSendProgress() {
   bar.style.transition = "none";
   bar.style.width = "0%";
   bar.classList.add("active");
-
-  // Staged simulation: fast early, slow near the end while waiting on server
   const steps = [
-    { target: 28, ms: 350 },
-    { target: 50, ms: 500 },
-    { target: 66, ms: 700 },
-    { target: 78, ms: 1000 },
-    { target: 88, ms: 1600 },
-    { target: 93, ms: 2500 },
+    { target: 28, ms: 350 }, { target: 50, ms: 500 },
+    { target: 66, ms: 700 }, { target: 78, ms: 1000 },
+    { target: 88, ms: 1600 }, { target: 93, ms: 2500 },
   ];
   let i = 0;
   function advance() {
@@ -1020,13 +1287,14 @@ function resetSendProgress() {
   setTimeout(() => { bar.classList.remove("active"); bar.style.cssText = ""; }, 220);
 }
 
-// ── Toast ────────────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────
 
 let toastTimer = null;
 
-function showToast(html, duration = 7000) {
+function showToast(html, duration = 7000, type = "success") {
   const toast = $("#toast");
   $("#toastMsg").innerHTML = html;
+  toast.classList.toggle("error-toast", type === "error");
   toast.classList.add("visible");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove("visible"), duration);
@@ -1037,7 +1305,7 @@ $("#toastClose").addEventListener("click", () => {
   $("#toast").classList.remove("visible");
 });
 
-// ── Reset to upload state ─────────────────────────────────────────────────
+// ── Reset to upload state ─────────────────────────────────────────────
 
 function resetToInitial() {
   sessionId = null;
@@ -1050,26 +1318,30 @@ function resetToInitial() {
   resetSendProgress();
   const sendBtn = $("#sendBtn");
   sendBtn.disabled = false;
-  sendBtn.textContent = "Send to Drive";
+  sendBtn.textContent = "Odeslat na Drive";
   $("#downloadBtn").disabled = false;
   $("#cancelBtn").disabled = false;
 
-  $("#fileInfo").style.display = "none";
-  $("#customerRow").classList.remove("visible");
-  $("#editToolbar").style.display = "none";
-  $("#previewWrap").style.display = "none";
-  $("#pageNav").style.display = "none";
   $("#previewBanner").classList.remove("visible");
-  $("#helpText").style.display = "none";
   hideStatus();
 
   $("#customerName").value = "";
   $("#filenamePreview").textContent = "";
   $("#searchInput").value = "";
-  $("#matchInfo").textContent = "";
+  setMatchInfo("");
   fileInput.value = "";
 
+  // Restore sidebar to edit state
+  $("#sidebarToolPanel").style.display = "";
+  $("#sidebarActionsEdit").style.display = "flex";
+  $("#statsPanelTitle").textContent = "Relace";
+  $("#statsAreasLabel").textContent = "Vybrané oblasti";
+  $("#statRowPage").style.display = "";
+  $("#statRowCustomer").style.display = "none";
+  $("#statRowOutput").style.display = "none";
+
   setMode("draw");
+  showUploadState();
 }
 </script>
 </body>
