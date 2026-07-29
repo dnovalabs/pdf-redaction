@@ -83,11 +83,23 @@ uv run app.py --add-user USERNAME PASSWORD
 
 - `GET /health` — liveness: the process is up (no dependency checks).
 - `GET /ready` — readiness: config loads, and when Google Drive is configured, `credentials.json` is present.
+- `GET /version` — the running application version, read from `pyproject.toml`.
 
 ### Deployment notes
 
 - **Single replica only.** Sessions and auth tokens are held in memory, so running more than one replica drops uploads and logs users out at random. Move that state to shared storage before scaling horizontally.
 - **Secrets.** In Kubernetes, mount `config.json` / `credentials.json` as a `Secret`. Nothing sensitive belongs in the image.
+
+## Versioning
+
+Follows [Semantic Versioning](https://semver.org). The version lives in **one place** — `[project].version` in `pyproject.toml` — and is read at runtime via `_version.py` (installed metadata, falling back to `pyproject.toml`). Changes are recorded in `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com) format).
+
+To cut a release:
+
+1. Bump `version` in `pyproject.toml`.
+2. Add a `## [X.Y.Z] - YYYY-MM-DD` entry to `CHANGELOG.md`.
+3. Commit both together, then `git tag vX.Y.Z && git push --tags`.
+4. Build and tag the image with the same number: `docker build -t pdf-redactor:X.Y.Z .`
 
 ## How it works
 

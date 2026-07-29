@@ -14,6 +14,8 @@ from fastapi import Cookie, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
+from _version import get_version
+
 app = FastAPI(title="PDF Redactor")
 log = logging.getLogger("pdf-redactor")
 
@@ -162,6 +164,12 @@ def commit_pending(sid: str) -> bytes:
 @app.get("/", response_class=HTMLResponse)
 def index():
     return (Path(__file__).parent / "index.html").read_text()
+
+
+@app.get("/version")
+def version():
+    """Return the running application version."""
+    return {"version": get_version()}
 
 
 @app.get("/health")
