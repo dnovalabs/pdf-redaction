@@ -1,0 +1,36 @@
+# CRITICAL: a host virtualenv copied into the image breaks it in confusing ways.
+.venv/
+venv/
+
+__pycache__/
+*.py[cod]
+
+.git/
+.gitignore
+
+# Secrets never enter the image — mounted at runtime instead.
+.env
+.env.*
+config.json
+credentials.json
+*.p12
+*.pem
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+.gstack/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+*.md
+!README.md
+Dockerfile*
+compose*.yaml

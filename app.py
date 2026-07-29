@@ -164,6 +164,23 @@ def index():
     return (Path(__file__).parent / "index.html").read_text()
 
 
+@app.get("/health")
+def health():
+    """Liveness: the process is up. No dependency checks — keep it cheap."""
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready():
+    """Readiness: config is loadable and, if Drive export is configured, creds exist."""
+    storage = load_config().get("storage", {})
+    if storage.get("type") == "google_drive":
+        creds_path = Path(__file__).parent / storage.get("credentials_path", "credentials.json")
+        if not creds_path.exists():
+            raise HTTPException(503, "Storage configured but credentials are missing.")
+    return {"status": "ready"}
+
+
 @app.get("/me")
 def me(user: str = Depends(require_auth)):
     return {"username": user}

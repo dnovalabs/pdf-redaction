@@ -49,6 +49,46 @@ Run this command for each user; then start the server normally. Sessions last 7 
 
 The `{customer_name}` placeholder in the naming pattern is replaced by the value entered in the UI. The app works without Drive configured — download is always available.
 
+## Docker
+
+The app ships as a container image. Secrets (`config.json`, `credentials.json`) are **never** baked into the image — they're mounted read-only at runtime.
+
+**Local development** (with hot reload and a `/health` healthcheck):
+
+```bash
+docker compose up --build
+```
+
+This mounts your local `config.json` and `credentials.json`. Open `http://localhost:8000`.
+
+**Build and run standalone:**
+
+```bash
+docker build -t pdf-redactor:0.1.0 .
+docker run -p 8000:8000 \
+  -v $(pwd)/config.json:/app/config.json:ro \
+  -v $(pwd)/credentials.json:/app/credentials.json:ro \
+  pdf-redactor:0.1.0
+```
+
+Tag the image with the version from `pyproject.toml` — never deploy `latest` to anything shared.
+
+**Managing users** writes to `config.json`, so run it against a writable copy on the host rather than the read-only mount:
+
+```bash
+uv run app.py --add-user USERNAME PASSWORD
+```
+
+### Health endpoints
+
+- `GET /health` — liveness: the process is up (no dependency checks).
+- `GET /ready` — readiness: config loads, and when Google Drive is configured, `credentials.json` is present.
+
+### Deployment notes
+
+- **Single replica only.** Sessions and auth tokens are held in memory, so running more than one replica drops uploads and logs users out at random. Move that state to shared storage before scaling horizontally.
+- **Secrets.** In Kubernetes, mount `config.json` / `credentials.json` as a `Secret`. Nothing sensitive belongs in the image.
+
 ## How it works
 
 1. **Upload** a PDF

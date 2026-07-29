@@ -1,0 +1,30 @@
+# Local development only. No production concerns here.
+# No `version:` key — obsolete in current Compose.
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    # Secrets are mounted read-only, never baked into the image.
+    # config.json is required; credentials.json only when Google Drive export is used.
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./credentials.json:/app/credentials.json:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # Hot reload without shadowing .venv with a bind mount.
+    develop:
+      watch:
+        - action: sync
+          path: ./app.py
+          target: /app/app.py
+        - action: sync
+          path: ./index.html
+          target: /app/index.html
+        - action: rebuild
+          path: ./uv.lock
