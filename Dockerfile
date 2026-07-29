@@ -31,6 +31,10 @@ WORKDIR /app
 
 COPY --from=builder --chown=app:app /app /app
 
+# Own the dir itself (COPY --chown only covers contents) so the non-root app user
+# can write the materialized secret files at startup, and make the entrypoint exec.
+RUN chown app:app /app && chmod +x /app/docker-entrypoint.sh
+
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
@@ -38,6 +42,9 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER app
 
 EXPOSE 8000
+
+# Entrypoint writes the Infisical-injected file secrets, then execs the CMD.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # One worker per container — scale with replicas, not --workers.
 # uvicorn adds the working directory to sys.path, so `app:app` resolves app.py.

@@ -12,12 +12,17 @@ from pathlib import Path
 import fitz  # pymupdf
 from fastapi import Cookie, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
 from _version import get_version
 
 app = FastAPI(title="PDF Redactor")
 log = logging.getLogger("pdf-redactor")
+
+# Expose /metrics for Prometheus scraping over the monitoring network.
+# Kept off the public edge by a deny rule in docker-compose.yml.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 sessions: dict[str, dict] = {}
 auth_tokens: dict[str, str] = {}  # token → username
@@ -173,8 +178,13 @@ def version():
 
 
 @app.get("/health")
+@app.get("/healthz")
 def health():
-    """Liveness: the process is up. No dependency checks — keep it cheap."""
+    """Liveness: the process is up. No dependency checks — keep it cheap.
+
+    /healthz is the canonical name the hosting stack keys on (Docker
+    healthcheck + Traefik deny rule); /health is kept for compatibility.
+    """
     return {"status": "ok"}
 
 
