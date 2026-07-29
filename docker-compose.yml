@@ -39,7 +39,9 @@ services:
       - "traefik.docker.network=edge"
       - "traefik.http.routers.pdf-redaction.rule=Host(`nova-pdf-editor.novalabs.cz`)"
       - "traefik.http.routers.pdf-redaction.entrypoints=websecure"
-      - "traefik.http.routers.pdf-redaction.tls.certresolver=le"
+      # HTTP-01 resolver — novalabs.cz is not on Cloudflare, so DNS-01 (`le`) can't
+      # issue for it. See infra/traefik `le-http` resolver.
+      - "traefik.http.routers.pdf-redaction.tls.certresolver=le-http"
       - "traefik.http.routers.pdf-redaction.middlewares=secure-headers@docker"
       - "traefik.http.services.pdf-redaction.loadbalancer.server.port=8000"
       # --- Keep ops endpoints off the public internet ---
@@ -48,7 +50,7 @@ services:
       # the Docker healthcheck still hits localhost:8000/healthz directly.
       - "traefik.http.routers.pdf-redaction-internal.rule=Host(`nova-pdf-editor.novalabs.cz`) && PathRegexp(`^/(metrics|healthz|health|ready)$`)"
       - "traefik.http.routers.pdf-redaction-internal.entrypoints=websecure"
-      - "traefik.http.routers.pdf-redaction-internal.tls.certresolver=le"
+      - "traefik.http.routers.pdf-redaction-internal.tls.certresolver=le-http"
       - "traefik.http.routers.pdf-redaction-internal.priority=100"
       - "traefik.http.routers.pdf-redaction-internal.service=pdf-redaction"
       - "traefik.http.routers.pdf-redaction-internal.middlewares=deny-internal@docker"
