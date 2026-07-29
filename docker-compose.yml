@@ -1,0 +1,65 @@
+# Deployed on the server at /opt/stack/apps/pdf-redaction/.
+# The app image is built by CI and pulled from GHCR; the tag is pinned by
+# scripts/deploy.sh via APP_VERSION.
+#
+# This app is STATELESS (in-memory sessions, no database) — it brings no Postgres
+# or Redis, so there is no `backend` network and no data services here.
+#
+# Secrets are injected at `up` time by `infisical run` (in scripts/deploy.sh) and
+# passed through by listing names (no values) under `environment:`. CONFIG_JSON
+# and CREDENTIALS_JSON hold the JSON file contents; the image's entrypoint writes
+# them to /app/config.json and /app/credentials.json inside the container — never
+# to the host disk, never baked into the image.
+name: pdf-redaction
+
+services:
+  app:
+    image: ghcr.io/dnovalabs/pdf-redaction:${APP_VERSION:-latest}
+    restart: unless-stopped
+    # PDF rendering (pymupdf at 150 DPI) is memory-hungry — give it more head-room
+    # than the generic template default. Tune from Grafana once it's live.
+    mem_limit: 1g
+    cpus: 1.0
+    # Pass-through file secrets from `infisical run` (names only, filled at deploy).
+    environment:
+      - CONFIG_JSON
+      - CREDENTIALS_JSON
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - edge
+      - monitoring
+    labels:
+      # --- Routing via Traefik ---
+      - "traefik.enable=true"
+      - "traefik.docker.network=edge"
+      - "traefik.http.routers.pdf-redaction.rule=Host(`nova-pdf-editor.novalabs.cz`)"
+      - "traefik.http.routers.pdf-redaction.entrypoints=websecure"
+      - "traefik.http.routers.pdf-redaction.tls.certresolver=le"
+      - "traefik.http.routers.pdf-redaction.middlewares=secure-headers@docker"
+      - "traefik.http.services.pdf-redaction.loadbalancer.server.port=8000"
+      # --- Keep ops endpoints off the public internet ---
+      # Higher-priority router matches these paths first and denies them at the
+      # edge. Prometheus still scrapes /metrics over the `monitoring` network and
+      # the Docker healthcheck still hits localhost:8000/healthz directly.
+      - "traefik.http.routers.pdf-redaction-internal.rule=Host(`nova-pdf-editor.novalabs.cz`) && PathRegexp(`^/(metrics|healthz|health|ready)$`)"
+      - "traefik.http.routers.pdf-redaction-internal.entrypoints=websecure"
+      - "traefik.http.routers.pdf-redaction-internal.tls.certresolver=le"
+      - "traefik.http.routers.pdf-redaction-internal.priority=100"
+      - "traefik.http.routers.pdf-redaction-internal.service=pdf-redaction"
+      - "traefik.http.routers.pdf-redaction-internal.middlewares=deny-internal@docker"
+      # --- Prometheus scraping (see monitoring/prometheus/prometheus.yml) ---
+      - "prometheus.scrape=true"
+      - "prometheus.port=8000"
+      - "prometheus.path=/metrics"
+
+networks:
+  # Shared, created by bootstrap (external).
+  edge:
+    external: true
+  monitoring:
+    external: true

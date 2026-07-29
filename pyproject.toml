@@ -10,7 +10,46 @@ dependencies = [
     "python-multipart>=0.0.9",
     "google-api-python-client>=2.0",
     "google-auth>=2.0",
+    # Exposes /metrics for Prometheus scraping (see docker-compose.yml).
+    "prometheus-fastapi-instrumentator>=7.0",
 ]
 
 [project.scripts]
 pdf-redactor = "app:main"
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.1",
+    "ruff>=0.8",
+    "pytest>=8.3",
+    "httpx>=0.28",   # required by FastAPI's TestClient
+]
+
+[tool.uv]
+# Run by module path (uvicorn app:app); never built or installed as a package.
+# Keeps `uv sync --frozen` working in CI without a build backend, matching the
+# Dockerfile's `--no-install-project`.
+package = false
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Ruff's default rule set, pinned explicitly so CI matches local regardless of
+# any machine-global ruff config. (Matches the hosting app-template's linting.)
+select = ["E4", "E7", "E9", "F"]
+
+[tool.pytest.ini_options]
+# app.py lives at the repo root and is never installed (package = false),
+# so put the root on sys.path for `from app import app`.
+pythonpath = ["."]
+
+[tool.commitizen]
+# Conventional Commits -> auto bump version + regenerate CHANGELOG + tag.
+#   uv run cz bump   (bumps [project].version, writes CHANGELOG.md, creates vX.Y.Z tag)
+name = "cz_conventional_commits"
+version_scheme = "semver"
+version_provider = "pep621"
+tag_format = "v$version"
+update_changelog_on_bump = true
+major_version_zero = true
