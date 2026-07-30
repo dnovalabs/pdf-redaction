@@ -128,6 +128,9 @@ def apply_redactions_to_doc(doc: fitz.Document, rects: list[Rect], text_query: s
         pg = doc[r.page]
         pw, ph = pg.rect.width, pg.rect.height
         pdf_rect = fitz.Rect(r.x * pw, r.y * ph, (r.x + r.w) * pw, (r.y + r.h) * ph)
+        # Rects arrive in the displayed (rotated) coordinate space the user drew in,
+        # but add_redact_annot expects unrotated page coords. Map back for /Rotate pages.
+        pdf_rect *= pg.derotation_matrix
         pg.add_redact_annot(pdf_rect, fill=(1, 1, 1))
         pages_touched.add(r.page)
         count += 1
@@ -136,6 +139,7 @@ def apply_redactions_to_doc(doc: fitz.Document, rects: list[Rect], text_query: s
         for i, pg in enumerate(doc):
             hits = pg.search_for(text_query)
             for rect in hits:
+                # search_for already returns unrotated page coords — no derotation here.
                 pg.add_redact_annot(rect, fill=(1, 1, 1))
                 count += 1
             if hits:
