@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/health` (liveness) and `/ready` (readiness) endpoints.
 - `/version` endpoint reporting the running application version.
 
+## v0.2.1 (2026-07-30)
+
+### Fix
+
+- correct redaction placement on rotated (/Rotate) PDF pages
+- use HTTP-01 cert resolver (le-http) for nova-pdf-editor.novalabs.cz
+
 ## v0.2.0 (2026-07-29)
 
 ### Feat
